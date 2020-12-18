@@ -27,33 +27,31 @@ public class IPpresentation {
 		bdd.createVars(N);
 		
 		int port1=2,port2=3;
-		String m1="11000000";
-		String m2="1100000010100000";
-		String hit0="00000000000000000000000000000000";
+		String m1="11000000";//192.*.*.*
+		String m2="1100000010100000";//192.168.*.*
+		String hit0="00000000000000000000000000000000";//0.0.0.0
 		int nexthop=3;
 		int pr1=1,pr2=5;
 		
-		Rule ip1 = new Rule(port1,m1,m1,nexthop,pr1,bdd);
+		Rule ip1 = new Rule(port1,m1,m1,nexthop,pr1,bdd);//创建一条规则
 		ip1.printer();
 		
-		Rule ip2 = new Rule(port2, m2, hit0, nexthop, pr2,bdd);
+		Rule ip2 = new Rule(port2, m2, hit0, nexthop, pr2,bdd);//待加入的规则ip2
 		ip2.printer();
 		
 		ArrayList<Rule> rules = new ArrayList<>(); //现有规则链表
-		rules.add(ip1);
+		rules.add(ip1);//将ip1加入链表，表示目前已有的规则
 		
-		ArrayList<Change> changes = new ArrayList<>();//算法1的变化
-		Identify(ip2,rules,bdd,changes);
+		ArrayList<Change> changes = new ArrayList<>();//算法1的输出变化，三元组（predicate，from，to）
+		Identify(ip2,rules,bdd,changes);//算法1，加入ip2后识别出变化
 //		Identify(ip2,rules,bdd,changes);
 		for(int i=0;i<rules.size();i++)
 		{
-			rules.get(i).printer();
+			rules.get(i).printer();//打印规则链表中已有规则的信息
 		}
 		bdd.cleanup();
 	}
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		
+	public static void test2() {
 		BDD bdd =new BDD(1);
 		bdd.createVars(5);
 		
@@ -67,21 +65,25 @@ public class IPpresentation {
 		 ar[4] = bdd.minterm("11100");
 		 ar[5] = bdd.minterm("11110");
 		 ar[6] = bdd.minterm("1101");
-		
+		Integer[] port = new Integer[]{1,2,3,4,5,6,7};
+		final Integer tr = 1;//TRUE
 		Map<Integer, ArrayList<Integer>> por = new HashMap<Integer, ArrayList<Integer>>();//predicate->port
-		Map<Integer, ArrayList<Integer>> pre;//port->predicate
-		ArrayList<Integer> brr = new ArrayList<>();
-		brr.add(a);
+		Map<Integer, ArrayList<Integer>> pre = new HashMap<Integer, ArrayList<Integer>>();;//port->predicate
+		ArrayList<Integer> pre_list = new ArrayList<>();
+		pre_list.add(tr);
+		ArrayList<Integer> port_list = new ArrayList<>();
 		for(int i=0;i<7;i++)
 		{
-//			ar[i]=t2;
-//			System.out.print(ar[i]+"  ");
-//			bdd.printSet(ar[i]);
-			por.put(ar[i], brr);
+			port_list.add(port[i]);
+		};
+		por.put(tr, port_list);
+		for(int i=0;i<7;i++)
+		{
+			pre.put(port[i],pre_list);
 			
 		}
-		for(int i=0;i<por.get(ar[2]).size();i++)
-			System.out.println(por.get(ar[2]).get(i));
+		for(int i=0;i<7;i++)
+			System.out.println(por.get(1));
 		
 		Iterator<Integer> iterator = por.keySet().iterator();
 		while(iterator.hasNext())
@@ -90,30 +92,21 @@ public class IPpresentation {
 			bdd.printSet(countInteger);
 		}
 		bdd.cleanup();
-//		rules.add(ip1);
-//		Rule ip3 =new Rule(rules.get(0));
-//		int temp1 = bdd.ref(bdd.minterm(ip1.getMatch()));
-//		int temp2 = bdd.ref(bdd.minterm(ip2.getMatch()));
-//		int ip1_match = bdd.ref(bdd.and(temp1, temp2));
-		
-//		System.out.println(ip1.getMatch().toString()+"\n"+ip2.getMatch().toString());
-		
-//		bdd.printSet(temp1);
-////		bdd.printSet(temp2);
-//		bdd.printSet(ip1_match);
-//		bdd.deref(temp1);
-//		bdd.deref(temp2);
-//		bdd.deref(ip1_match);
-		
+	}
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+//		test2();
+//		
+		test1();
 	}
 	public static void  Identify(Rule r,ArrayList<Rule> R,BDD bdd,ArrayList<Change> C) {
-		r.changeHit(r.getMatch());
+		r.changeHit(r.getMatch());//将r的匹配域赋给击中域 r.hit <-- r.match;
 		int and = bdd.ref(bdd.minterm(""));
 //		int hit = bdd.ref(bdd.minterm(r.getMatch()));
 		for(int i=0;i<R.size();i++)
 		{
 //			int temphit = bdd.ref(bdd.minterm(R.rules[i].getMatch()));
-			and = bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));
+			and = bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));//r'.hit(and)r.hit,两规则的bdd做and运算
 			if(R.get(i).getPrior()>r.getPrior()&&and!=0)
 			{
 				r.b_hit=bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));
@@ -122,11 +115,11 @@ public class IPpresentation {
 				if(r.getport()!=R.get(i).getport())
 				{
 					System.out.println("转移成功！");
-					Change change = new Change(and, R.get(i).getport(),r.getport(), bdd);
+					Change change = new Change(and, R.get(i).getport(),r.getport(), bdd);//创建新变化（predicate，from，to）
 //					change.printChange();
-					C.add(change);
+					C.add(change);//加入
 				}
-				R.get(i).b_hit=bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));
+				R.get(i).b_hit=bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));//重写为r'的击中域赋值
 //				R.rules[i].changeHit(and);
 			}
 		}
@@ -136,7 +129,7 @@ public class IPpresentation {
 	}
 	public static void Split()
 	{
-		
+		for(int i=0;i<)
 	}
 	public static void Transfer()
 	{
@@ -151,7 +144,8 @@ public class IPpresentation {
 		{
 			for(int j=0;j<pre.get(C.get(i).from).size();j++)
 			{
-				int and=bdd.ref(bdd.and(P[j],C.get(i).insertion));
+				Integer p = pre.get(C.get(i).from).get(j);
+				int and=bdd.ref(bdd.and(p,C.get(i).insertion));
 				if(and!=0)
 					if(and!=P[j])
 						Split();
