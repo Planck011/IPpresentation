@@ -7,20 +7,51 @@ import java.util.Map;
 import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
 import com.sun.org.apache.xerces.internal.impl.dv.dtd.IDDatatypeValidator;
 import com.sun.org.apache.xerces.internal.impl.dv.xs.IDDV;
-import com.sun.org.apache.xpath.internal.operations.String;
+//import com.sun.org.apache.xpath.internal.operations.String;
 import com.sun.tools.classfile.Opcode.Set;
-
+import java.lang.*;
 import jdd.bdd.*;
 import jdd.bdd.sets.*;
 import jdk.javadoc.internal.doclets.formats.html.resources.standard_zh_CN;
 import test.*;
 public class IPpresentation {
-	public static int copy(int s,BDD bdd) {
-		int tr = bdd.ref(bdd.minterm(""));
-		int ss = bdd.ref(bdd.and(tr, s));
-		bdd.deref(tr);
-		return ss;
-	}
+	@SuppressWarnings("unchecked")
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		ArrayList<Integer> port = new ArrayList<>();
+		port.add(1);
+		port.add(2);
+		port.add(3);
+		port.add(4);
+		port.add(5);
+		port.add(6);
+		port.add(7);
+		ArrayList<Integer> predicate = new ArrayList<>();
+		final Integer tr = 1;//TRUE
+		predicate.add(tr);
+		Map<Integer, ArrayList<Integer>> por = new HashMap<Integer, ArrayList<Integer>>();//predicate->port
+		Map<Integer, ArrayList<Integer>> pre = new HashMap<Integer, ArrayList<Integer>>();;//port->predicate
+		ArrayList<ArrayList<Integer>> pre_list = new ArrayList<>();
+		ArrayList<ArrayList<Integer>> port_list = new ArrayList<>();
+		for(int i=0;i<7;i++)
+		{
+			pre_list.add(predicate);
+		}
+		port_list.add(port);
+		por.put(tr, port_list.get(0));
+		for(int i=0;i<7;i++)
+		{
+			
+			pre.put(port.get(i),(ArrayList<Integer>)predicate.clone());//ç»™porå’Œpreçš„æ¯ä¸ªlistéƒ½è¦åˆ†åˆ«åˆ†é…ç©ºé—´
+			
+		}
+		
+//		mapPrint(pre);
+//		mapPrint(por);
+		test1(pre,por);
+//		mapPrint(pre);
+//		mapPrint(por);
+	}	
 	public static void test1(Map<Integer, ArrayList<Integer>> pre,Map<Integer, ArrayList<Integer>> por) {
 		BDD bdd = new BDD(1000,100);
 		final int N=32;
@@ -33,48 +64,33 @@ public class IPpresentation {
 		int nexthop=3;
 		int pr1=1,pr2=5;
 		
-		Rule ip1 = new Rule(port1,m1,m1,nexthop,pr1,bdd);//´´½¨Ò»Ìõ¹æÔò
+		Rule ip1 = new Rule(port1,m1,m1,nexthop,pr1,bdd);//åˆ›å»ºä¸€æ¡è§„åˆ™
 //		ip1.printer();
 		
-		Rule ip2 = new Rule(port2, m2, hit0, nexthop, pr2,bdd);//´ı¼ÓÈëµÄ¹æÔòip2
+		Rule ip2 = new Rule(port2, m2, hit0, nexthop, pr2,bdd);//å¾…åŠ å…¥çš„è§„åˆ™ip2
 		ip2.printer();
+		ArrayList<Rule> rules = new ArrayList<>(); //ç°æœ‰è§„åˆ™é“¾è¡¨
+//		rules.add(ip1);//å°†ip1åŠ å…¥é“¾è¡¨ï¼Œè¡¨ç¤ºç›®å‰å·²æœ‰çš„è§„åˆ™
 		
-		ArrayList<Rule> rules = new ArrayList<>(); //ÏÖÓĞ¹æÔòÁ´±í
-//		rules.add(ip1);//½«ip1¼ÓÈëÁ´±í£¬±íÊ¾Ä¿Ç°ÒÑÓĞµÄ¹æÔò
-		
-		ArrayList<Change> changes = new ArrayList<>();//Ëã·¨1µÄÊä³ö±ä»¯£¬ÈıÔª×é£¨predicate£¬from£¬to£©
-		Identify(ip1,rules,bdd,changes);//Ëã·¨1£¬¼ÓÈëip2ºóÊ¶±ğ³ö±ä»¯
+		ArrayList<Change> changes = new ArrayList<>();//ç®—æ³•1çš„è¾“å‡ºå˜åŒ–ï¼Œä¸‰å…ƒç»„ï¼ˆpredicateï¼Œfromï¼Œtoï¼‰
+		Identify(ip1,rules,bdd,changes);//ç®—æ³•1ï¼ŒåŠ å…¥ip2åè¯†åˆ«å‡ºå˜åŒ–
 		Identify(ip2,rules,bdd,changes);
 		for(int i=0;i<rules.size();i++)
 		{
-			rules.get(i).printer();//´òÓ¡¹æÔòÁ´±íÖĞÒÑÓĞ¹æÔòµÄĞÅÏ¢
+			rules.get(i).printer();//æ‰“å°è§„åˆ™é“¾è¡¨ä¸­å·²æœ‰è§„åˆ™çš„ä¿¡æ¯
 		}
 		
 		
-		Update(changes, bdd, pre, por);
-		
+		ArrayList<Integer> D = Update(changes, bdd, pre, por);
+//		for(int i=0;i<D.size();i++)
+//		{
+//			System.out.print(D.get(i));
+//		}
+		System.out.println("D="+D);
 		
 		bdd.cleanup();
 	}
-	public static void init() {
-		Integer[] port = new Integer[]{1,2,3,4,5,6,7};
-		final Integer tr = 1;//TRUE
-		Map<Integer, ArrayList<Integer>> por = new HashMap<Integer, ArrayList<Integer>>();//predicate->port
-		Map<Integer, ArrayList<Integer>> pre = new HashMap<Integer, ArrayList<Integer>>();;//port->predicate
-		ArrayList<Integer> pre_list = new ArrayList<>();
-		pre_list.add(tr);
-		ArrayList<Integer> port_list = new ArrayList<>();
-		for(int i=0;i<7;i++)
-		{
-			port_list.add(port[i]);
-		};
-		por.put(tr, port_list);
-		for(int i=0;i<7;i++)
-		{
-			pre.put(port[i],pre_list);
-			
-		}
-	}
+
 	public static void test2() {
 		BDD bdd =new BDD(1);
 		bdd.createVars(5);
@@ -91,8 +107,8 @@ public class IPpresentation {
 		 ar[6] = bdd.minterm("1101");
 		Integer[] port = new Integer[]{1,2,3,4,5,6,7};
 		final Integer tr = 1;//TRUE
-		Map<Integer, ArrayList<Integer>> por = new HashMap<Integer, ArrayList<Integer>>();//predicate->port
-		Map<Integer, ArrayList<Integer>> pre = new HashMap<Integer, ArrayList<Integer>>();;//port->predicate
+		Map<Integer, ArrayList<Integer>> por = new HashMap<Integer, ArrayList<Integer>>();//predicate->port  è°“è¯ç«¯å£æ˜ å°„
+		Map<Integer, ArrayList<Integer>> pre = new HashMap<Integer, ArrayList<Integer>>();;//port->predicate ç«¯å£è°“è¯é“¶è›‡
 		ArrayList<Integer> pre_list = new ArrayList<>();
 		pre_list.add(tr);
 		ArrayList<Integer> port_list = new ArrayList<>();
@@ -107,42 +123,17 @@ public class IPpresentation {
 			
 		}
 		for(int i=0;i<7;i++)
-			System.out.println(por.get(1));//Êä³ökey¶ÔÓ¦µÄ¼üÖµ
+			System.out.println(por.get(1));//è¾“å‡ºkeyå¯¹åº”çš„é”®å€¼
 		
-		Iterator<Integer> iterator = por.keySet().iterator();//porµÄkeyµü´úÆ÷
-		while(iterator.hasNext())//±éÀúÊä³ökey
+		Iterator<Integer> iterator = por.keySet().iterator();//porçš„keyè¿­ä»£å™¨
+		while(iterator.hasNext())//éå†è¾“å‡ºkey
 		{
 			Integer countInteger =iterator.next();
 			bdd.printSet(countInteger);
 		}
 		bdd.cleanup();
 	}
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-//		
-		Integer[] port = new Integer[]{1,2,3,4,5,6,7};
-		final Integer tr = 1;//TRUE
-		Map<Integer, ArrayList<Integer>> por = new HashMap<Integer, ArrayList<Integer>>();//predicate->port
-		Map<Integer, ArrayList<Integer>> pre = new HashMap<Integer, ArrayList<Integer>>();;//port->predicate
-		ArrayList<Integer> pre_list = new ArrayList<>();
-		pre_list.add(tr);
-		ArrayList<Integer> port_list = new ArrayList<>();
-		for(int i=0;i<7;i++)
-		{
-			port_list.add(port[i]);
-		}
-		por.put(tr, port_list);
-		for(int i=0;i<7;i++)
-		{
-//			pre.put(port[i],);//¸øporºÍpreµÄÃ¿¸ölist¶¼Òª·Ö±ğ·ÖÅä¿Õ¼ä
-			
-		}
-		mapPrint(pre);
-		mapPrint(por);
-		test1(pre,por);
-		mapPrint(pre);
-		mapPrint(por);
-	}
+	
 	public static void mapPrint(Map<Integer, ArrayList<Integer>> map) {
 		for(Map.Entry<Integer, ArrayList<Integer>> entry:map.entrySet())
 		{
@@ -150,13 +141,13 @@ public class IPpresentation {
 		}
 	}
 	public static void  Identify(Rule r,ArrayList<Rule> R,BDD bdd,ArrayList<Change> C) {
-		r.changeHit(r.getMatch());//½«rµÄÆ¥ÅäÓò¸³¸ø»÷ÖĞÓò r.hit <-- r.match;
+		r.changeHit(r.getMatch());//å°†rçš„åŒ¹é…åŸŸèµ‹ç»™å‡»ä¸­åŸŸ r.hit <-- r.match;
 		int and = bdd.ref(bdd.minterm(""));
 //		int hit = bdd.ref(bdd.minterm(r.getMatch()));
 		for(int i=0;i<R.size();i++)
 		{
 //			int temphit = bdd.ref(bdd.minterm(R.rules[i].getMatch()));
-			and = bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));//r'.hit(and)r.hit,Á½¹æÔòµÄbdd×öandÔËËã
+			and = bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));//r'.hit(and)r.hit,ä¸¤è§„åˆ™çš„bddåšandè¿ç®—
 			if(R.get(i).getPrior()>r.getPrior()&&and!=0)
 			{
 				r.b_hit=bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));
@@ -164,65 +155,131 @@ public class IPpresentation {
 			if(R.get(i).getPrior()<r.getPrior()&&and!=0) {
 				if(r.getport()!=R.get(i).getport())
 				{
-					Change change = new Change(and, R.get(i).getport(),r.getport(), bdd);//´´½¨ĞÂ±ä»¯£¨predicate£¬from£¬to£©
+					Change change = new Change(and, R.get(i).getport(),r.getport(), bdd);//åˆ›å»ºæ–°å˜åŒ–ï¼ˆpredicateï¼Œfromï¼Œtoï¼‰
 //					change.printChange();
-					C.add(change);//¼ÓÈë
-					System.out.println("Ê¶±ğ³É¹¦£¡");
+					C.add(change);//åŠ å…¥
+					System.out.println("è¯†åˆ«æˆåŠŸï¼");
 				}
-				R.get(i).b_hit=bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));//ÖØĞ´Îªr'µÄ»÷ÖĞÓò¸³Öµ
+				R.get(i).b_hit=bdd.ref(bdd.and(bdd.not(r.b_hit), R.get(i).b_hit));//é‡å†™ä¸ºr'çš„å‡»ä¸­åŸŸèµ‹å€¼
 //				R.rules[i].changeHit(and);
 			}
 		}
 		bdd.deref(and);
 		R.add(r);
-		System.out.println("Ìí¼Ó¹æÔò³É¹¦");
+		System.out.println("æ·»åŠ è§„åˆ™æˆåŠŸ");
 	}
-	public static void Split(int p,int p1,int p2,Map<Integer, ArrayList<Integer>> pre,Map<Integer, ArrayList<Integer>> por)
+	@SuppressWarnings("unchecked")
+	public static void Split(int p,int p1,int p2,Map<Integer, ArrayList<Integer>> pre,Map<Integer, ArrayList<Integer>> por,ArrayList<Integer> D)
 	{
-		for(int i=0;i<por.get(p).size();i++)
+		int i,j;
+		for(i=0;i<por.get(p).size();i++)
 		{
 			int temp_port=por.get(p).get(i);
 			pre.get(temp_port).add(p1);
 			pre.get(temp_port).add(p2);
-			for(int j=0;j<pre.get(temp_port).size();j++)
+			for(j=0;j<pre.get(temp_port).size();j++)
 			{
 				if(pre.get(temp_port).get(j)==p)
 					pre.get(temp_port).remove(j);
 			}
 			
 		}
-		por.put(p1, por.get(p));
-		por.put(p2, por.get(p));
-		por.remove(p);
-		
-	}
-	public static void Transfer()
-	{
-		
-	}
-	public static void Merge()
-	{
-		
-	}
-	public static void Update(ArrayList<Change> C,BDD bdd,Map<Integer, ArrayList<Integer>> pre,Map<Integer, ArrayList<Integer>> por) {
-		for(int i=0;i<C.size();i++)
+		por.put(p1, (ArrayList<Integer>)por.get(p).clone());//æ·±æ‹·è´åˆ†é…ç©ºé—´
+		por.put(p2, (ArrayList<Integer>)por.get(p).clone());
+		por.remove(p);//æ­¤æ¡ä¸æ¸…æ¥šæ˜¯å¦éœ€è¦åˆ é™¤
+		//D
+		for(i=0;i<D.size();i++)
 		{
-			for(int j=0;j<pre.get(C.get(i).from).size();j++)
+			if(p==D.get(i))
 			{
-				Integer p = pre.get(C.get(i).from).get(j);
-				int and=bdd.ref(bdd.and(p,C.get(i).insertion));
-				if(and!=0)
+				D.remove(i);
+				D.add(p1);
+				D.add(p2);
+				break;
+			}
+		}
+		
+	}
+	public static void Transfer(int p,int from ,int to,Map<Integer, ArrayList<Integer>> pre,Map<Integer, ArrayList<Integer>> por,ArrayList<Integer> D)
+	{//118 2 3
+		for(int j=0;j<pre.get(from).size();j++)
+		{
+			if(pre.get(from).get(j)==p)
+				pre.get(from).remove(j);
+		}
+		pre.get(to).add(p);
+		por.get(p).add(to);
+		for(int j=0;j<por.get(p).size();j++)
+		{
+			if(por.get(p).get(j)==from)
+				por.get(p).remove(j);
+		}
+		//D
+		D.add(p);
+	}
+	@SuppressWarnings("unchecked")
+	public static void Merge(int p1,int p2,int p,Map<Integer, ArrayList<Integer>> pre,Map<Integer, ArrayList<Integer>> por,ArrayList<Integer> D)
+	{
+		int i,j,temp_port;
+		for(i=0;i<por.get(p1).size();i++)
+		{
+			temp_port=por.get(p1).get(i);
+			for(int j=0;j<pre.get(temp_port).size();j++)
+			{
+				if(pre.get(temp_port).get(j)==p1||pre.get(temp_port).get(j)==p2)
+					pre.get(temp_port).remove(j);
+			}
+			pre.get(temp_port).add(p);
+		}
+		por.put(p, (ArrayList<Integer>)por.get(p1).clone());//unclear
+		for(i=0;i<D.size();i++)                 //Unclear
+		{
+			for(j=0;j<D.size();j++)
+			{
+				if(D.get(i)==p1&&D.get(j)==p2)
+				{
+					D.remove(i);
+					D.remove(j);
+					D.add(p);
+					break;
+				}
+			}
+			
+		}
+	}
+	public static ArrayList<Integer> Update(ArrayList<Change> C,BDD bdd,Map<Integer, ArrayList<Integer>> pre,Map<Integer, ArrayList<Integer>> por) {
+		ArrayList<Integer> D = new ArrayList<>();
+		for(int i=0;i<C.size();i++)//for each (insertion,from,to)âˆˆC
+		{
+			for(int j=0;j<pre.get(C.get(i).from).size();j++)//for each pâˆˆpre(from)
+			{
+				int p = pre.get(C.get(i).from).get(j);
+				int and=bdd.ref(bdd.and(p,C.get(i).insertion));//pâˆ§insertion
+				if(and!=0)//éç©º
 					if(and!=p)
-						Split(p,bdd.and(p, C.get(i).insertion),bdd.and(p, bdd.not(C.get(i).insertion)),pre,por);
-//					Transfer();
-//					if(true)//
-//						Merge();
+						Split(p,bdd.and(p, C.get(i).insertion),bdd.and(p, bdd.not(C.get(i).insertion)),pre,por,D);
+					Transfer(bdd.and(p, C.get(i).insertion),C.get(i).from,C.get(i).to,pre,por,D);
+					for(int c=0;c<pre.get(C.get(i).from).size();c++)//âˆƒp'!=p,por(p'ï¼‰==por(p)
+					{
+						int pp=pre.get(C.get(i).from).get(c);
+						if(pp==p)
+						{
+							continue;
+						}
+						else {	
+							if(por.get(pp).equals(por.get(p)))
+							{
+								Merge(p, pp, bdd.or(p, pp), pre, por, D);
+							}
+						}
+					}
 					int no = bdd.ref(bdd.not(p));
-					C.get(i).insertion=bdd.and(C.get(i).insertion, no);
+					C.get(i).insertion=bdd.and(C.get(i).insertion, no);//insertion<---insertionâˆ§Â¬p
 					bdd.deref(no);
 					
 			}
 		}
+		return D;
 	}
 
 }
