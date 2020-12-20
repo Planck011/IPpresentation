@@ -17,6 +17,14 @@ import test.*;
 public class IPpresentation {
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) {
+		/*
+		 * 由于没有构建网络拓扑和元素模块，本次实验仅针对一台设备中的各个端口。
+		 * 待插入规则有四条，对应IP范围为（IP/mask)192.0.0.0/8,192.168.0.0/16,198.29.128.160/28,198.39.128/18
+		 * 规则已经事先计算好二进制表示的匹配域，并使用BDD库转换成bdd表示，详见Rule.java构造函数;
+		 * 使用Map构造端口谓词映射，Map<Integer,Arraylist<Interger>>,端口号采用int类型;
+		 * 算法1对应函数Identity()，返回变化ArrayList<Change> changes;
+		 * 算法2对应函数Update()，返回转移谓词ArrayList<Integer> D;
+		 */
 		// TODO Auto-generated method stub
 		ArrayList<Integer> port = new ArrayList<>();
 		port.add(1);
@@ -57,36 +65,40 @@ public class IPpresentation {
 		final int N=32;
 		bdd.createVars(N);
 		
-		int port1=2,port2=3;
+		int port1=2,port2=3,port3=4,port4=5;
 		String m1="11000000";//192.*.*.*
-		String m2="1100000010100000";//192.168.*.*
+		String m2="1100000010100000",m3="1100011000100111100000001010",m4="110001100010011110";//192.168.*.*
 		String hit0="00000000000000000000000000000000";//0.0.0.0
 		int nexthop=3;
-		int pr1=1,pr2=5;
+		int pr1=1,pr2=5,pr3=4,pr4=3;
 		
 		Rule ip1 = new Rule(port1,m1,m1,nexthop,pr1,bdd);//创建一条规则
 //		ip1.printer();
 		
 		Rule ip2 = new Rule(port2, m2, hit0, nexthop, pr2,bdd);//待加入的规则ip2
-		ip2.printer();
+//		ip2.printer();
+		Rule ip3 = new Rule(port3,m3,hit0,nexthop,pr3,bdd);
+		Rule ip4 = new Rule(port4,m4,hit0,nexthop,pr4,bdd);
 		ArrayList<Rule> rules = new ArrayList<>(); //现有规则链表
 //		rules.add(ip1);//将ip1加入链表，表示目前已有的规则
 		
 		ArrayList<Change> changes = new ArrayList<>();//算法1的输出变化，三元组（predicate，from，to）
 		Identify(ip1,rules,bdd,changes);//算法1，加入ip2后识别出变化
 		Identify(ip2,rules,bdd,changes);
+		Identify(ip4,rules,bdd,changes);
+		Identify(ip3,rules,bdd,changes);
 		for(int i=0;i<rules.size();i++)
 		{
 			rules.get(i).printer();//打印规则链表中已有规则的信息
 		}
-		
-		
+		for(int i=0;i<changes.size();i++)
+		{
+			changes.get(i).printChange();
+		}		
 		ArrayList<Integer> D = Update(changes, bdd, pre, por);
-//		for(int i=0;i<D.size();i++)
-//		{
-//			System.out.print(D.get(i));
-//		}
 		System.out.println("D="+D);
+		for(int i=0;i<D.size();i++)
+			bdd.printSet(D.get(i));
 		
 		bdd.cleanup();
 	}
@@ -94,8 +106,6 @@ public class IPpresentation {
 	public static void test2() {
 		BDD bdd =new BDD(1);
 		bdd.createVars(5);
-		
-		Integer a=15;
 		
 		Integer[] ar=new Integer[7];
 		 ar[0] = bdd.minterm("00001");
@@ -256,6 +266,7 @@ public class IPpresentation {
 				int p = pre.get(C.get(i).from).get(j);
 				int and=bdd.ref(bdd.and(p,C.get(i).insertion));//p∧insertion
 				if(and!=0)//非空
+				{
 					if(and!=p)
 						Split(p,bdd.and(p, C.get(i).insertion),bdd.and(p, bdd.not(C.get(i).insertion)),pre,por,D);
 					Transfer(bdd.and(p, C.get(i).insertion),C.get(i).from,C.get(i).to,pre,por,D);
@@ -276,7 +287,7 @@ public class IPpresentation {
 					int no = bdd.ref(bdd.not(p));
 					C.get(i).insertion=bdd.and(C.get(i).insertion, no);//insertion<---insertion∧¬p
 					bdd.deref(no);
-					
+				}	
 			}
 		}
 		return D;
