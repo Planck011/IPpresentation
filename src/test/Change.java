@@ -3,11 +3,11 @@ package test;
 import jdd.bdd.BDD;
 
 public class Change {
-	public int from;
-	public int to;
+	public String from;
+	public String to;
 	public BDD bdd;
 	public int insertion;
-	public Change(int in,int p1,int p2,BDD bdd){
+	public Change(int in,String p1,String p2,BDD bdd){
 		this.from=p1;
 		this.to=p2;
 		this.bdd=bdd;

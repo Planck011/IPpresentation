@@ -5,7 +5,7 @@ import jdd.bdd.BDD;
 public class Rule {
 	private static int idcounter=0;
 	private int id;//±àºÅ
-	private int port;//¶Ë¿Ú
+	private String port;//¶Ë¿Ú
 	private String match; //Æ¥ÅäÓò
 	private String hit ;//»÷ÖĞÓò
 	private int nexthop;//ÏÂÒ»Ìø
@@ -14,7 +14,7 @@ public class Rule {
 	public int b_match;
 	public int b_hit;
 //	private int lport;
-	public Rule(int p,String m,String h,int n,int pr,BDD bdd) {
+	public Rule(String p,String m,String h,int n,int pr,BDD bdd) {
 		this.id=++idcounter;
 		this.port=p;
 		this.match=m;
@@ -41,7 +41,7 @@ public class Rule {
 	public int getId() {
 		return id;
 	}
-	public int getport(){
+	public String getport(){
 		return port;
 	}
 	public int getNetxhop(){
