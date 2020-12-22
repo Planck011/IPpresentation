@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.lang.*;
 import jdd.bdd.*;
+import sun.awt.www.content.image.gif;
 public class IPpresentation {
 	public static void main(String[] args) throws ConcurrentModificationException {
 		/*
@@ -11,8 +12,13 @@ public class IPpresentation {
 		 * 待插入规则有四条，对应IP范围为（IP/mask)192.0.0.0/8,192.168.0.0/16,198.29.128.160/28,198.39.128/18
 		 * 规则已经事先计算好二进制表示的匹配域，并使用BDD库转换成bdd表示，详见Rule.java构造函数;
 		 * 使用Map构造端口谓词映射，Map<Integer,Set<Interger>>,端口号采用int类型;
-		 * 算法1对应函数Identity()，返回变化Set<Change> changes;
+		 * 算法1对应函数Identify()，返回变化Set<Change> changes;
 		 * 算法2对应函数Update()，返回转移谓词Set<Integer> D;
+		 * 算法3对应UpdateRewrite(),由于论文信息不全，以及对重写元素还不太懂，相关函数未实现完整;
+		 * 算法4对应ConstructDeltaForwardingGraph()，根据算法2返回的转移谓词集D，以及整个网络节点信息和端口谓词映射生成并返回转发图Graph G;
+		 * 算法5对应CheckInvariants(),根据算法4返回的转发图G以及初始启动节点集V，遍历转发图，验证不变量，判断环路黑洞。
+		 * 算法12通过自造数据进行了验证，目前没有问题，除了代码中的不好的操作导致捕获到ConcurrentModificationException异常，暂时影响不大，尚未修改。
+		 * 算法45还未测试，缺乏网络拓扑数据，后续构造拓扑进行测试。
 		 */
 		// TODO Auto-generated method stub
 		Set<String> port = new HashSet<>();
@@ -98,49 +104,7 @@ public class IPpresentation {
 			bdd.printSet(d);
 		
 		bdd.cleanup();
-	}
-
-	public static void test2() {
-		BDD bdd =new BDD(1);
-		bdd.createVars(5);
-		
-		Integer[] ar=new Integer[7];
-		 ar[0] = bdd.minterm("00001");
-		 ar[1] = bdd.minterm("11000");
-		 ar[2] = bdd.minterm("11001");
-		 ar[3] = bdd.minterm("11010");
-		 ar[4] = bdd.minterm("11100");
-		 ar[5] = bdd.minterm("11110");
-		 ar[6] = bdd.minterm("1101");
-		Integer[] port = new Integer[]{1,2,3,4,5,6,7};
-		final Integer tr = 1;//TRUE
-		Map<Integer, Set<Integer>> por = new HashMap<Integer, Set<Integer>>();//predicate->port  璋撹瘝绔彛鏄犲皠
-		Map<Integer, Set<Integer>> pre = new HashMap<Integer, Set<Integer>>();;//port->predicate 绔彛璋撹瘝閾惰泧
-		Set<Integer> pre_list = new HashSet<>();
-		pre_list.add(tr);
-		Set<Integer> port_list = new HashSet<>();
-		for(int i=0;i<7;i++)
-		{
-			port_list.add(port[i]);
-		};
-		por.put(tr, port_list);
-		for(int i=0;i<7;i++)
-		{
-			pre.put(port[i],pre_list);
-			
-		}
-		for(int i=0;i<7;i++)
-			System.out.println(por.get(1));//print the key value
-		
-		Iterator<Integer> iterator = por.keySet().iterator();//the iterator of por.key
-		while(iterator.hasNext())//Traverse key
-		{
-			Integer countInteger =iterator.next();
-			bdd.printSet(countInteger);
-		}
-		bdd.cleanup();
-	}
-	
+	}	
 	public static <E,T> void mapPrint(Map<E, Set<T>> map) {
 		for(Entry<E, Set<T>> entry:map.entrySet())
 		{
@@ -256,6 +220,61 @@ public class IPpresentation {
 
 		return D;
 	}
+	public static int T(int p) { //undefined
+		return p;
+	}
+	public static Set<Integer> SplitRW(int p,int p1,int p2,Map<Integer, Set<Integer>> RT,BDD bdd,Map<String, Set<Integer>> pre,Map<Integer, Set<String>> por)
+	{
+		Set<Integer> D = new HashSet<>();
+		Split(p, p1, p2, pre, por, D);
+		for(Entry<Integer, Set<Integer>> entry:RT.entrySet())
+		{
+				if(entry.getValue().contains(p))
+				{
+					entry.getValue().add(p1);
+					entry.getValue().add(p2);
+					entry.getValue().remove(p);
+				}
+		}
+		RT.remove(p);
+		RT.put(p1,new HashSet<>());
+		RT.get(p1).add(T(p1));
+		RT.put(p2,new HashSet<>());
+		RT.get(p2).add(T(p2));
+		return D;
+	}
+	public static Set<Integer> UpdateRW(Set<Change> C)//undefined
+	{
+		return new HashSet<Integer>();
+	}
+	public static Set<Integer> UpdateRewrite(Set<Change> C,BDD bdd,Map<Integer, Set<Integer>> RT,Map<String, Set<Integer>> pre,Map<Integer, Set<String>> por)
+	{
+		Set<Integer> D = UpdateRW(C);
+		boolean updated;
+		while(true)
+		{
+			updated=false;
+			for(Entry<Integer, Set<Integer>> entry:RT.entrySet())
+			{
+				for(Integer p:entry.getValue())
+				{
+					Set<Integer> P = por.keySet();
+					if(!P.contains(p))
+					{
+						for (Integer pp : P) 
+						{
+							if(bdd.and(p,pp)!=0&&bdd.and(pp, bdd.not(p))!=0)
+								SplitRW(pp, bdd.and(p,pp), bdd.and(pp, bdd.not(p)), RT, bdd, pre, por);
+						}
+						updated=true;
+					}
+				}
+			}
+			if(updated==false)
+				break;
+		}
+		return D;
+	}
 	public static Graph ConstructDeltaForwardingGraph(Set<Integer> D,Map<Integer, Set<String>> por,Set<Node> device)
 	{
 		Set<Node> V = new HashSet<>();
@@ -275,26 +294,34 @@ public class IPpresentation {
 						}
 						for(Node s2:device)
 						{
-							if(!V.contains(s2))
+							if(s2.findConnect(port))
 							{
-								V.add(s2);
+								if(!V.contains(s2))
+								{
+									V.add(s2);
+								}
 								Edge e =new Edge(s1, s2);
 								if(!E.contains(e))
 								{
-									A.get(e).clear();
+									if(A.get(e) != null) {
+										A.get(e).clear();
+									}
+									else {
+										A.put(e, new HashSet<>());
+										A.get(e).clear();
+									}
 									E.add(e);
 								}
 								A.get(e).add(delta);
 							}
 						}
-						
 					}
 				}
 			}
 		}
 		return new Graph(V,E,A);
 	}
-	public static void CheckInvariants(Graph G,Set<Integer> D,Set<Node> V)
+	public static void CheckInvariants(Graph G,Set<Integer> D,Set<Node> V)//检查不变量
 	{
 		for(Node s:V)
 		{
@@ -302,10 +329,10 @@ public class IPpresentation {
 			pset.addAll(D);
 			Set<Node> history = new HashSet<>();
 			history.clear();
-			Traverse(s,pset,history);
+			Traverse(s,pset,history,G);
 		}
 	}
-	public static void Traverse(Node s,Set<Integer> pSet,Set<Node> history)
+	public static void Traverse(Node s,Set<Integer> pSet,Set<Node> history,Graph G)
 	{
 		if(pSet.isEmpty())
 			return;
@@ -315,5 +342,20 @@ public class IPpresentation {
 			return;
 		}
 		//
+		for (Edge e : G.E) {
+			if(e.from.equals(s))
+			{
+				if(e.to.str.equals("default"))
+				{
+					System.out.println("found blackhole!");
+					return;
+				}
+				Set<Integer> insert = new HashSet<>();
+				insert.clear();
+				insert.addAll(pSet);
+				insert.retainAll(G.A.get(e));
+				Traverse(e.to, insert, history, G);
+			}
+		}
 	}
 }

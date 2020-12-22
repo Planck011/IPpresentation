@@ -9,11 +9,13 @@ public class Node {
 	public ArrayList<String> connect;
 	private static int idcounter=0;
 	private final int portcount=7;
+	public String str = "default";
 	public Node()
 	{
 		this.id = ++idcounter;
 		this.port_list = new ArrayList<>();
 		this.connect = new ArrayList<>();
+		this.str = "on";
 	}
 	public int getId() {
 		return id;
