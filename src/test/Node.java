@@ -1,41 +1,42 @@
 package test;
 
-import java.util.ArrayList;
+import java.util.*;
 
 
 public class Node {
 	private int id;
-	public ArrayList<String> port_list;
-	public ArrayList<String> connect;
+	public Set<String> port_list;
+	public Set<String> connect;
 	private static int idcounter=0;
 	private final int portcount=7;
 	public String str = "default";
 	public Node()
 	{
 		this.id = ++idcounter;
-		this.port_list = new ArrayList<>();
-		this.connect = new ArrayList<>();
+		this.port_list = new HashSet<>();
+		this.connect = new HashSet<>();
 		this.str = "on";
+	}
+	public Node(String name,Set<String> p,Set<String> c)
+	{
+		this.id = ++idcounter;
+		this.port_list = new HashSet<>();
+		this.connect = new HashSet<>();
+		port_list.addAll(p);
+		connect.addAll(c);
+		this.str = name;
 	}
 	public int getId() {
 		return id;
 	}
 	public boolean findPort(String port) {
-		int i;
-		for(i=0;i<port_list.size();i++)
-		{
-			if(port_list.get(i).equals(port))
-				return true;
-		}
+		if(port_list.contains(port))
+			return true;
 		return false;
 	}
 	public boolean findConnect(String port) {
-		int i;
-		for(i=0;i<connect.size();i++)
-		{
-			if(connect.get(i).equals(port))
-				return true;
-		}
+		if(connect.contains(port))
+			return true;
 		return false;
 	}
 }

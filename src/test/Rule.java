@@ -4,12 +4,12 @@ import jdd.bdd.BDD;
 
 public class Rule {
 	private static int idcounter=0;
-	private int id;//±àºÅ
-	private String port;//¶Ë¿Ú
-	private String match; //Æ¥ÅäÓò
-	private String hit ;//»÷ÖĞÓò
-	private int nexthop;//ÏÂÒ»Ìø
-	private int prior;//ÓÅÏÈ¼¶
+	private int id;//ç¼–å·
+	private String port;//ç«¯å£
+	private String match; //åŒ¹é…åŸŸå
+	private String hit ;//å‡»ä¸­åŸŸ
+	private int nexthop;//ï¿½ï¿½Ò»ï¿½ï¿½
+	private int prior;//ï¿½ï¿½ï¿½È¼ï¿½
 	public BDD bdd;
 	public int b_match;
 	public int b_hit;
@@ -66,11 +66,11 @@ public class Rule {
 		bdd.deref(b_match);
 	}
 	public void printer() {
-		System.out.println("¹æÔò"+id+"  "+"¶Ë¿Ú:"+port+"  "+"ÓÅÏÈ¼¶£º"+prior+"  "+"Æ¥ÅäÓò£¨String£©£º"+match);
-		System.out.print("Æ¥ÅäÓò£¨bdd£©£º");
+		System.out.println("rule"+id+"  "+"port:"+port+"  "+"prior:"+prior+"  "+"match(string):"+match);
+		System.out.print("match(bdd):");
 		bdd.printSet(b_match);
-		System.out.println("»÷ÖĞÓò£¨String£©£º"+hit);
-		System.out.print("»÷ÖĞÓò£¨bdd£©£º");
+		System.out.println("hit(string):"+hit);
+		System.out.print("hit(bdd)");
 		bdd.printSet(b_hit);
 	}
 }

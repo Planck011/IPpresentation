@@ -2,9 +2,14 @@ package test;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.lang.*;
 import jdd.bdd.*;
 import sun.awt.www.content.image.gif;
+import sun.tools.jconsole.VariableGridLayout;
+import sun.tools.serialver.resources.serialver;
 public class IPpresentation {
 	public static void main(String[] args) throws ConcurrentModificationException {
 		/*
@@ -52,18 +57,51 @@ public class IPpresentation {
 		
 //		mapPrint(pre);
 //		mapPrint(por);
-		try {
-			test1(pre,por);
-		} catch (ConcurrentModificationException e) {
-			// TODO: handle exception 
-			//ignore
-			System.out.println("catch ConcurrentModificationException！");
-		}
-		
+	
+		Set<Node> device = initDevice();
+		test1(pre,por,device);
 //		mapPrint(pre);
-		mapPrint(por);
+		
+		
 	}	
-	public static void test1(Map<String, Set<Integer>> pre,Map<Integer, Set<String>> por) {
+	public static Set<Node> initDevice()
+	{
+		Set<Node> device = new HashSet<>();
+		try {
+			BufferedReader in = new BufferedReader(new FileReader("C:\\Users\\puyun\\Desktop\\rules.txt"));
+			String str;
+			while((str=in.readLine())!=null)
+			{
+				String[] newstr = str.split("\\,");
+				String name = newstr[0];
+				String[] port = newstr[1].split(" ");
+				Set<String> port_list = new HashSet<>();
+				for(String p:port)
+				{
+					port_list.add(p);
+				}
+				Set<String> connect = new HashSet<>();
+				String[] con = newstr[2].split(" ");
+				for(String c:con)
+				{
+					connect.add(c);
+				}
+				Node s = new Node(name,port_list,connect);
+				device.add(s);
+				
+			}
+//			for(Node d:device)
+//			{
+//				System.out.println(d.str);
+//			}
+			in.close();
+			
+		} catch (IOException  e) {
+			// TODO: handle exception
+		}
+		return device;
+	}
+	public static void test1(Map<String, Set<Integer>> pre,Map<Integer, Set<String>> por,Set<Node> device) {
 		BDD bdd = new BDD(1000,100);
 		final int N=32;
 		bdd.createVars(N);
@@ -76,15 +114,11 @@ public class IPpresentation {
 		int pr1=1,pr2=5,pr3=4,pr4=3;
 		
 		Rule ip1 = new Rule(port1,m1,m1,nexthop,pr1,bdd);//Create one Rule
-//		ip1.printer();
 		
 		Rule ip2 = new Rule(port2, m2, hit0, nexthop, pr2,bdd);//next Rule ip2
-//		ip2.printer();
 		Rule ip3 = new Rule(port3,m3,hit0,nexthop,pr3,bdd);
 		Rule ip4 = new Rule(port4,m4,hit0,nexthop,pr4,bdd);
 		ArrayList<Rule> rules = new ArrayList<>(); //Rule set
-//		rules.add(ip1);
-		
 		Set<Change> changes = new HashSet<>();//some change (predicate,from,to)
 		Identify(ip1,rules,bdd,changes);//insert one rule,identify changes
 		Identify(ip2,rules,bdd,changes);
@@ -97,11 +131,31 @@ public class IPpresentation {
 		for(Change change:changes)
 		{
 			change.printChange();
-		}		
-		Set<Integer> D = Update(changes, bdd, pre, por);
-		System.out.println("D="+D);
-		for(Integer d:D)
-			bdd.printSet(d);
+		}
+		try {
+			Set<Integer> D = Update(changes, bdd, pre, por);
+			System.out.println("D="+D);
+			for(Integer d:D)
+				bdd.printSet(d);
+			mapPrint(por);
+			mapPrint(pre);
+//			for(Node d:device)
+//				System.out.println(d.str);
+			Graph G = ConstructDeltaForwardingGraph(D, por, device);
+			Set<Node> V = new HashSet<>();
+			V.addAll(device);
+			Node s1 = V.toArray(new Node[device.size()])[0];
+			V.clear();
+			V.add(s1);
+			G.printGraph();//print the graph
+			CheckInvariants(G, D,V);
+		} catch (ConcurrentModificationException e) {
+			// TODO: handle exception
+			System.out.println("dadda");
+		}finally {
+			
+		}
+		
 		
 		bdd.cleanup();
 	}	
@@ -194,6 +248,7 @@ public class IPpresentation {
 	}
 	public static Set<Integer> Update(Set<Change> C,BDD bdd,Map<String, Set<Integer>> pre,Map<Integer, Set<String>> por) {
 		Set<Integer> D = new HashSet<>();
+		try {
 		for(Change c:C)
 		{
 			for(Integer p:pre.get(c.from))
@@ -203,21 +258,25 @@ public class IPpresentation {
 				{
 					if(and!=p)
 					{
-						Split(p, and, bdd.and(p, bdd.not(c.insertion)), pre, por, D);
+							Split(p, and, bdd.and(p, bdd.not(c.insertion)), pre, por, D);
 					}
+					
 					Transfer(and, c.from, c.to, pre, por, D);
 					for(Integer pp:pre.get(c.from))
 					{
 						if(pp!=p&&por.get(pp).equals(por.get(p)))
 						{
-							Merge(p, pp, bdd.or(p, pp), pre, por, D);
+								Merge(p, pp, bdd.or(p, pp), pre, por, D);
 						}
 					}
 					c.insertion=bdd.and(c.insertion, bdd.not(p));
 				}
 			}
 		}
-
+		} catch (ConcurrentModificationException e) {
+			// TODO: handle exception
+			System.out.println("catch ConcurrentModificationException！");
+		}
 		return D;
 	}
 	public static int T(int p) { //undefined
@@ -300,19 +359,20 @@ public class IPpresentation {
 								{
 									V.add(s2);
 								}
-								Edge e =new Edge(s1, s2);
-								if(!E.contains(e))
+								Edge e1 =new Edge(s1, s2);
+								Edge e2 = new Edge(s2,s1);
+								if(!E.contains(e1))
 								{
-									if(A.get(e) != null) {
-										A.get(e).clear();
+									if(A.get(e1) != null) {
+										A.get(e1).clear();
 									}
 									else {
-										A.put(e, new HashSet<>());
-										A.get(e).clear();
+										A.put(e1, new HashSet<>());
+										A.get(e1).clear();
 									}
-									E.add(e);
+									E.add(e1);
 								}
-								A.get(e).add(delta);
+								A.get(e1).add(delta);
 							}
 						}
 					}
@@ -354,7 +414,8 @@ public class IPpresentation {
 				insert.clear();
 				insert.addAll(pSet);
 				insert.retainAll(G.A.get(e));
-				Traverse(e.to, insert, history, G);
+				history.add(s);
+				Traverse(e.to, insert, history,G);
 			}
 		}
 	}
