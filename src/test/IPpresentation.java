@@ -2,14 +2,12 @@ package test;
 
 import java.util.*;
 import java.util.Map.Entry;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+
+
+import java.io.*;
 import java.lang.*;
 import jdd.bdd.*;
-import sun.awt.www.content.image.gif;
-import sun.tools.jconsole.VariableGridLayout;
-import sun.tools.serialver.resources.serialver;
+
 public class IPpresentation {
 	public static void main(String[] args) throws ConcurrentModificationException {
 		/*
@@ -34,41 +32,85 @@ public class IPpresentation {
 		port.add("5");
 		port.add("6");
 		port.add("7");
+		port.add("8");
 		Set<Integer> predicate = new HashSet<>();
 		final Integer tr = 1;//TRUE
 		predicate.add(tr);
 		Map<Integer, Set<String>> por = new HashMap<Integer, Set<String>>();//predicate->port
 		Map<String, Set<Integer>> pre = new HashMap<String, Set<Integer>>();;//port->predicate
-		Set<Set<Integer>> pre_list = new HashSet<>();
-		Set<Set<String>> port_list = new HashSet<>();
-		for(int i=0;i<7;i++)
-		{
-			pre_list.add(predicate);
-		}
-		port_list.add(port);
 		por.put(tr, port);
 		String[] port_st = port.toArray(new String[port.size()]);
-		for(int i=0;i<7;i++)
+		for(int i=0;i<8;i++)
 		{
 			Set<Integer> temp = new HashSet<>();
 			temp.addAll(predicate);
-			pre.put(port_st[i],temp);//给por和pre的每个list都要分别分配空间
+			pre.put(port_st[i],temp);
 		}
 		
-//		mapPrint(pre);
-//		mapPrint(por);
-	
 		Set<Node> device = initDevice();
-		test1(pre,por,device);
-//		mapPrint(pre);
+		for (Node node : device) {
+			System.out.println(node.str);
+		}
+		BDD bdd = new BDD(1000,100);
+		bdd.createVars(32);
+		ArrayList<Rule> rules = initRule(bdd);
+		ArrayList<Rule> nowrules = new ArrayList<>();
+		int count=1;
+		for (Rule rule : rules) { //for every one rule check
+			System.out.println("-------------------------------------------------");
+			System.out.println("intert "+count+" rules");
+			count++;
+			Set<Change> changes = new HashSet<>();
+			Set<Integer> D = new HashSet<>();
+			Identify(rule, nowrules, bdd, changes);
+			D = Update(changes, bdd, pre, por);
+			System.out.println("D="+D);
+			System.out.println(rule.getHit());
+			System.out.println("exit "+nowrules.size()+" rules");
+			Graph G = ConstructDeltaForwardingGraph(D, por, device);
+			G.printGraph();
+			Set<Node> V = new HashSet<>();
+			V.addAll(device);
+			Node s1 = V.toArray(new Node[device.size()])[0];
+			V.clear();
+			V.add(s1);
+			CheckInvariants(G, D, V);
+			System.out.println("-------------------------------------------------");
+		}
+		mapPrint(pre);
 		
 		
-	}	
+	}
+	public static ArrayList<Rule> initRule(BDD bdd)
+	{
+		ArrayList<Rule> rules = new ArrayList<>();
+		try {
+			
+			BufferedReader in = new BufferedReader((new FileReader("C:\\Users\\pyh1343122828\\Desktop\\Java\\IPpresentation\\src\\rules.txt")));
+			String str;
+			String hit="00000000000000000000000000000000";
+			while((str=in.readLine())!=null)
+			{
+				String[] rule = str.split("\\,");
+				String port=rule[0];
+				String match=rule[1];
+				int next=Integer.parseInt(rule[2]);
+				int prir=Integer.parseInt(rule[3]);
+				Rule r = new Rule(port,match,hit,next,prir,bdd);
+				rules.add(r);
+				
+			}
+			in.close();
+		} catch (IOException e) {
+			// TODO: handle exception
+		}
+		return rules;
+	}
 	public static Set<Node> initDevice()
 	{
 		Set<Node> device = new HashSet<>();
 		try {
-			BufferedReader in = new BufferedReader(new FileReader("C:\\Users\\puyun\\Desktop\\rules.txt"));
+			BufferedReader in = new BufferedReader(new FileReader("C:\\Users\\pyh1343122828\\Desktop\\Java\\IPpresentation\\src\\topo.txt"));
 			String str;
 			while((str=in.readLine())!=null)
 			{
@@ -139,8 +181,8 @@ public class IPpresentation {
 				bdd.printSet(d);
 			mapPrint(por);
 			mapPrint(pre);
-//			for(Node d:device)
-//				System.out.println(d.str);
+			for(Node d:device)
+				System.out.println(d.str);
 			Graph G = ConstructDeltaForwardingGraph(D, por, device);
 			Set<Node> V = new HashSet<>();
 			V.addAll(device);
@@ -166,13 +208,13 @@ public class IPpresentation {
 		}
 	}
 	public static void  Identify(Rule r,ArrayList<Rule> R,BDD bdd,Set<Change> C) {
-		r.changeHit(r.getMatch());//将r的匹配域赋给击中域 r.hit <-- r.match;
+		r.changeHit(r.getMatch());//灏唕鐨勫尮閰嶅煙璧嬬粰鍑讳腑鍩� r.hit <-- r.match;
 		int and = bdd.ref(bdd.minterm(""));
 //		int hit = bdd.ref(bdd.minterm(r.getMatch()));
 		for(int i=0;i<R.size();i++)
 		{
 //			int temphit = bdd.ref(bdd.minterm(R.rules[i].getMatch()));
-			and = bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));//r'.hit(and)r.hit,两规则的bdd做and运算
+			and = bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));//r'.hit(and)r.hit,涓よ鍒欑殑bdd鍋歛nd杩愮畻
 			if(R.get(i).getPrior()>r.getPrior()&&and!=0)
 			{
 				r.b_hit=bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));
@@ -183,15 +225,15 @@ public class IPpresentation {
 					Change change = new Change(and, R.get(i).getport(),r.getport(), bdd);//
 //					change.printChange();
 					C.add(change);//add to changes
-					System.out.println("identify success！");
+					System.out.println("identify success!");
 				}
-				R.get(i).b_hit=bdd.ref(bdd.and(bdd.not(r.b_hit), R.get(i).b_hit));//重写为r'的击中域赋值
+				R.get(i).b_hit=bdd.ref(bdd.and(bdd.not(r.b_hit), R.get(i).b_hit));//閲嶅啓涓簉'鐨勫嚮涓煙璧嬪��
 //				R.rules[i].changeHit(and);
 			}
 		}
 		bdd.deref(and);
 		R.add(r);
-		System.out.println("insert one rule！");
+		System.out.println("insert one rule!");
 	}
 	public static void Split(int p,int p1,int p2,Map<String, Set<Integer>> pre,Map<Integer, Set<String>> por,Set<Integer> D)
 	{
@@ -208,7 +250,7 @@ public class IPpresentation {
 		s2.addAll(por.get(p));
 		por.put(p1, s1);
 		por.put(p2, s2);
-		por.remove(p);//此条不清楚是否需要删除 
+		por.remove(p);//姝ゆ潯涓嶆竻妤氭槸鍚﹂渶瑕佸垹闄� 
 		//D
 		if(D.contains(p))
 		{
@@ -275,7 +317,7 @@ public class IPpresentation {
 		}
 		} catch (ConcurrentModificationException e) {
 			// TODO: handle exception
-			System.out.println("catch ConcurrentModificationException！");
+			System.out.println("catch ConcurrentModificationException锛�");
 		}
 		return D;
 	}
@@ -338,7 +380,7 @@ public class IPpresentation {
 	{
 		Set<Node> V = new HashSet<>();
 		Set<Edge> E = new HashSet<>(); 
-		Map<Edge, Set<Integer>> A = new HashMap<>();//A需要初始化获取各边信息
+		Map<Edge, Set<Integer>> A = new HashMap<>();//A闇�瑕佸垵濮嬪寲鑾峰彇鍚勮竟淇℃伅
 		for(Integer delta:D)
 		{
 			for(String port:por.get(delta))
@@ -381,7 +423,7 @@ public class IPpresentation {
 		}
 		return new Graph(V,E,A);
 	}
-	public static void CheckInvariants(Graph G,Set<Integer> D,Set<Node> V)//检查不变量
+	public static void CheckInvariants(Graph G,Set<Integer> D,Set<Node> V)//妫�鏌ヤ笉鍙橀噺
 	{
 		for(Node s:V)
 		{
@@ -398,7 +440,7 @@ public class IPpresentation {
 			return;
 		if(history.contains(s))
 		{
-			System.out.println("found loop！");
+			System.out.println("found loop!");
 			return;
 		}
 		//
