@@ -24,6 +24,31 @@ public class IPpresentation {
 		 * 算法4发现一个问题，在构造转发图构造的是有向图，这样会导致生成的转发图边集里会有两条方向相反的边，而这边在进入算法5遍历是会产生loop，目前没有想到好的解决办法。
 		 */
 		// TODO Auto-generated method stub
+		BDD bdd = new BDD(1000,100);
+		bdd.createVars(32);
+		int tr = bdd.ref(bdd.minterm(""));
+//		bdd.printSet(tr);
+		Set<Node> device = initDevice(bdd);
+		ArrayList<Rule> rules = initRule(bdd);
+		for(Node d:device)
+		{
+			try {
+				Set<Change> C = new HashSet<>();
+				Identify(rules.get(0),d.rules, bdd, C);
+				for(Change c:C)
+					c.printChange();
+			} catch (NullPointerException e) {
+				// TODO: handle exception
+				System.err.println("no such port");
+			}
+			
+		}
+		
+		
+		
+	}
+	public static void test()
+	{
 		Set<String> port = new HashSet<>();
 		port.add("1");
 		port.add("2");
@@ -56,6 +81,7 @@ public class IPpresentation {
 		ArrayList<Rule> rules = initRule(bdd);
 		ArrayList<Rule> nowrules = new ArrayList<>();
 		int count=1;
+		long startime = System.currentTimeMillis();
 		for (Rule rule : rules) { //for every one rule check
 			System.out.println("-------------------------------------------------");
 			System.out.println("intert "+count+" rules");
@@ -78,16 +104,16 @@ public class IPpresentation {
 			mapPrint(pre);//print map(port-->predicate)
 			System.out.println("-------------------------------------------------");
 		}
-		
-		
-		
+		bdd.cleanup();
+		long endtime = System.currentTimeMillis();
+		System.out.println("run time:"+(endtime-startime)+"ns");
 	}
 	public static ArrayList<Rule> initRule(BDD bdd)
 	{
 		ArrayList<Rule> rules = new ArrayList<>();
 		try {
 			
-			BufferedReader in = new BufferedReader((new FileReader("C:\\Users\\pyh1343122828\\Desktop\\Java\\IPpresentation\\src\\rules.txt")));
+			BufferedReader in = new BufferedReader((new FileReader("C:\\Users\\puyun\\Desktop\\test\\workspace\\IPpresentation\\src\\rules.txt")));
 			String str;
 			String hit="00000000000000000000000000000000";
 			while((str=in.readLine())!=null)
@@ -104,14 +130,15 @@ public class IPpresentation {
 			in.close();
 		} catch (IOException e) {
 			// TODO: handle exception
+			System.err.println("no such rules file,please check");
 		}
 		return rules;
 	}
-	public static Set<Node> initDevice()
+	public static Set<Node> initDevice(BDD bdd)
 	{
 		Set<Node> device = new HashSet<>();
 		try {
-			BufferedReader in = new BufferedReader(new FileReader("C:\\Users\\pyh1343122828\\Desktop\\Java\\IPpresentation\\src\\topo.txt"));
+			BufferedReader in = new BufferedReader(new FileReader("C:\\Users\\puyun\\Desktop\\test\\workspace\\IPpresentation\\src\\topo.txt"));
 			String str;
 			while((str=in.readLine())!=null)
 			{
@@ -129,7 +156,7 @@ public class IPpresentation {
 				{
 					connect.add(c);
 				}
-				Node s = new Node(name,port_list,connect);
+				Node s = new Node(name,port_list,connect,bdd);
 				device.add(s);
 				
 			}
@@ -141,6 +168,7 @@ public class IPpresentation {
 			
 		} catch (IOException  e) {
 			// TODO: handle exception
+			System.err.println("no such topo file,please check");
 		}
 		return device;
 	}
@@ -402,8 +430,8 @@ public class IPpresentation {
 								{
 									V.add(s2);
 								}
-								Edge e1 =new Edge(s1, s2);
-								Edge e2 = new Edge(s2,s1);
+								Edge e1 =new Edge(s1, s2,port);
+//								Edge e2 = new Edge(s2,s1);
 								if(!E.contains(e1))
 								{
 									if(A.get(e1) != null) {
@@ -446,7 +474,7 @@ public class IPpresentation {
 		}
 		//
 		for (Edge e : G.E) {
-			if(e.from.equals(s))
+			if(s.findPort(e.fport))//e.from.comtains(s)
 			{
 				if(e.to.str.equals("default"))
 				{

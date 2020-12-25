@@ -1,6 +1,7 @@
 package test;
 
-import java.util.*;;
+import java.util.*;
+import java.util.Map.Entry;;
 
 public class Graph {
 	public Set<Node> V;
@@ -17,9 +18,13 @@ public class Graph {
 		for(Node v:V)
 			System.out.print(v.str+" ");
 		System.out.print("\nedge:");
-		for(Edge e:E)
+//		for(Edge e:E)
+//		{
+//			System.out.print("("+e.from.str+","+e.to.str+","+e.fport+")");
+//		}
+		for(Entry<Edge, Set<Integer>> entry:A.entrySet())
 		{
-			System.out.print("("+e.from.str+","+e.to.str+")");
+			System.out.print("("+entry.getKey().from.str+","+entry.getKey().to.str+","+entry.getKey().fport+")"+"{"+entry.getValue()+"}");
 		}
 		System.out.println();
 	}
