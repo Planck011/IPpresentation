@@ -40,7 +40,6 @@ public class Node {
 		for(String pp:p)
 		{
 			Pred.put(pp, new HashSet<>());
-			Pred.get(pp).add(0);
 		}
 		rules.add(new Rule("default","","",3,0,bdd));
 		this.str = name;
