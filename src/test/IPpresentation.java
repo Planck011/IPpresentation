@@ -21,7 +21,7 @@ public class IPpresentation {
 		 * 算法4对应ConstructDeltaForwardingGraph()，根据算法2返回的转移谓词集D，以及整个网络节点信息和端口谓词映射生成并返回转发图Graph G;
 		 * 算法5对应CheckInvariants(),根据算法4返回的转发图G以及初始启动节点集V，遍历转发图，验证不变量，判断环路黑洞。
 		 * 算法12通过自造数据进行了验证，目前没有问题，除了代码中的不好的操作导致捕获到ConcurrentModificationException异常，暂时影响不大，尚未修改。
-		 * 算法45还未测试，缺乏网络拓扑数据，后续构造拓扑进行测试。
+		 * 算法4发现一个问题，在构造转发图构造的是有向图，这样会导致生成的转发图边集里会有两条方向相反的边，而这边在进入算法5遍历是会产生loop，目前没有想到好的解决办法。
 		 */
 		// TODO Auto-generated method stub
 		Set<String> port = new HashSet<>();
@@ -47,12 +47,12 @@ public class IPpresentation {
 			pre.put(port_st[i],temp);
 		}
 		
-		Set<Node> device = initDevice();
+		Set<Node> device = initDevice();//get network topo
 		for (Node node : device) {
 			System.out.println(node.str);
 		}
 		BDD bdd = new BDD(1000,100);
-		bdd.createVars(32);
+		bdd.createVars(32);//init BDD 32bits
 		ArrayList<Rule> rules = initRule(bdd);
 		ArrayList<Rule> nowrules = new ArrayList<>();
 		int count=1;
@@ -71,13 +71,14 @@ public class IPpresentation {
 			G.printGraph();
 			Set<Node> V = new HashSet<>();
 			V.addAll(device);
-			Node s1 = V.toArray(new Node[device.size()])[0];
+			Node s1 = V.toArray(new Node[device.size()])[1];
 			V.clear();
 			V.add(s1);
 			CheckInvariants(G, D, V);
+			mapPrint(pre);//print map(port-->predicate)
 			System.out.println("-------------------------------------------------");
 		}
-		mapPrint(pre);
+		
 		
 		
 	}
@@ -225,7 +226,7 @@ public class IPpresentation {
 					Change change = new Change(and, R.get(i).getport(),r.getport(), bdd);//
 //					change.printChange();
 					C.add(change);//add to changes
-					System.out.println("identify success!");
+					System.out.println("-------->identify success!<--------");
 				}
 				R.get(i).b_hit=bdd.ref(bdd.and(bdd.not(r.b_hit), R.get(i).b_hit));//閲嶅啓涓簉'鐨勫嚮涓煙璧嬪��
 //				R.rules[i].changeHit(and);
@@ -317,7 +318,7 @@ public class IPpresentation {
 		}
 		} catch (ConcurrentModificationException e) {
 			// TODO: handle exception
-			System.out.println("catch ConcurrentModificationException锛�");
+			System.out.println("catch ConcurrentModificationException!");
 		}
 		return D;
 	}
