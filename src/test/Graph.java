@@ -7,6 +7,9 @@ public class Graph {
 	public Set<Node> V;
 	public Set<Edge> E;
 	public Map<Edge, Set<Integer>> A;
+	public Graph() {
+		this(new HashSet<>(), new HashSet<>(), new HashMap<>());
+	}
 	public Graph(Set<Node> v,Set<Edge> e,Map<Edge, Set<Integer>> a) {
 		this.A = a;
 		this.E = e;
@@ -16,16 +19,18 @@ public class Graph {
 	{
 		System.out.print("node:");
 		for(Node v:V)
-			System.out.print(v.str+" ");
+			System.out.print(v.name+" ");
 		System.out.print("\nedge:");
-//		for(Edge e:E)
-//		{
-//			System.out.print("("+e.from.str+","+e.to.str+","+e.fport+")");
-//		}
 		for(Entry<Edge, Set<Integer>> entry:A.entrySet())
 		{
-			System.out.print("("+entry.getKey().from.str+","+entry.getKey().to.str+","+entry.getKey().fport+")"+"{"+entry.getValue()+"}");
+			System.out.print("("+entry.getKey().from.name+","+entry.getKey().to.name+","+entry.getKey().fport+")"+"{"+entry.getValue()+"}");
 		}
 		System.out.println();
+	}
+	public void clear()
+	{
+		this.A.clear();
+		this.E.clear();
+		this.V.clear();
 	}
 }

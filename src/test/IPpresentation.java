@@ -3,12 +3,15 @@ package test;
 import java.util.*;
 import java.util.Map.Entry;
 
+import com.sun.tools.javac.launcher.Main;
 
 import java.io.*;
 import java.lang.*;
 import jdd.bdd.*;
+import sun.jvm.hotspot.ui.action.FindAction;
 
 public class IPpresentation {
+	private static boolean traversed = false;
 	public static void main(String[] args) throws ConcurrentModificationException {
 		/*
 		 * 由于没有构建元素模块，本次实验仅针转发规则。
@@ -35,47 +38,69 @@ public class IPpresentation {
 	}
 	public static void test()//
 	{
-		BDD bdd = new BDD(1000,100);
+		BDD bdd = new BDD(1000,100); //init BDD
 		bdd.createVars(32);
-		int tr = bdd.ref(bdd.minterm(""));
-//		bdd.printSet(tr);
-		Set<Node> device = initDevice(bdd);
-		ArrayList<Node> deviceList = new ArrayList<>(device);
-		ArrayList<Rule> rules = initRule(bdd);
-		for(Node d:device)
-		{
-			long strattime = System.currentTimeMillis();
-			System.out.println("----------------------start-------------------------");
-			try {
-				ArrayList<Change> C = new ArrayList<>();
-				for(Rule rule:rules)
-				{
-					Identify(rule,d.rules, bdd, C);
-				}
-				for(Change c:C)
-					c.printChange();
-				Set<Integer> D = Update(C, bdd, d.Pred, d.Port);
-				System.out.println("D="+D);
-				Graph G = ConstructDeltaForwardingGraph(D, d.Port, device);
-				G.printGraph();
-				Set<Node> V = new HashSet<>();
-				for(Node sNode:deviceList)
-				{
-					if(sNode.str.equals("s3"))
-						V.add(sNode);
-				}
-				CheckInvariants(G, D, V,bdd);
-				
-			} catch (NullPointerException e) {
-				// TODO: handle exception
-				System.err.println("no such port!");
-			}
-			long endtime = System.currentTimeMillis();
-			System.out.println("runtime:"+(endtime-strattime)+"ns");
-			System.out.println("-----------------------end--------------------------");
-			
-		}
+		Set<Node> device = initDevice(bdd); //init device
+		ArrayList<Rule> rules = initRule(bdd);//init rules
+		ArrayList<Change> C = new ArrayList<>(); // changes
+		Graph G = new Graph(); //DFG
+		Set<Integer> D = new HashSet<>(); //transffered predicate set
+		Set<Node> V = new HashSet<>();//start node set
+		System.out.println("----------------------start-------------------------");
+		long strattime = System.currentTimeMillis();
+		
+		insertRulestoDevice(Find("s3", device), rules, bdd, C, device, G, D);//insert rule to node s3
+		
+		insertRulestoDevice(Find("s4", device), rules, bdd, C, device, G, D);//insert rule to node s4
+		
+		
+		V.add(Find("s3", device));
+		V.add(Find("s4", device));
+		V.add(Find("s1", device));
+		CheckInvariants(G, D, V,bdd);
+		long endtime = System.currentTimeMillis();
+		System.out.println("runtime:"+(endtime-strattime)+"ns");//runtime
+		System.out.println("-----------------------end--------------------------");
+		
 		bdd.cleanup();
+	}
+	/*
+	 * 此函数给指定节点插入规则，识别变化，更改转移谓词集D，并修改转发图
+	 */
+	public static void insertRulestoDevice(Node s,ArrayList<Rule> rules,BDD bdd,ArrayList<Change> C,Set<Node> device,Graph G,Set<Integer> D) {
+		for(Rule r:rules)
+		{
+			if(s.findPort(r.getport()))
+			{
+				Identify(r, s.rules, bdd, C);
+			}
+		}
+		for(Change c:C)
+			c.printChange();
+		Set<Integer> d1 = Update(C, bdd, s.Pred, s.Port);
+		System.out.println("D="+d1);
+		ConstructDeltaForwardingGraph(d1,s.Port, device,G);
+		G.printGraph();
+		C.clear();
+		D.addAll(d1);
+	}
+	public static Node Find(String s,Set<Node> set)//find node by name
+	{
+		ArrayList<Node> arr =  new ArrayList<>(set);
+		for (Node e : arr) {
+			if(e.name.equals(s))
+				return e;
+		}	
+		return null;
+	}
+	public static <E>E Find(E s,Set<E> set)
+	{
+		ArrayList<E> arr =  new ArrayList<>(set);
+		for (E e : arr) {
+			if(e.equals(s))
+				return e;
+		}	
+		return null;
 	}
 	public static ArrayList<Rule> initRule(BDD bdd)
 	{
@@ -141,64 +166,7 @@ public class IPpresentation {
 		}
 		return device;
 	}
-	public static void test1(Map<String, Set<Integer>> pre,Map<Integer, Set<String>> por,Set<Node> device) {
-		BDD bdd = new BDD(1000,100);
-		final int N=32;
-		bdd.createVars(N);
-		
-		String port1="2",port2="3",port3="4",port4="5";
-		String m1="11000000";//192.*.*.*
-		String m2="1100000010101000",m3="1100011000100111100000001010",m4="110001100010011110";//192.168.*.*
-		String hit0="00000000000000000000000000000000";//0.0.0.0
-		int nexthop=3;
-		int pr1=1,pr2=5,pr3=4,pr4=3;
-		
-		Rule ip1 = new Rule(port1,m1,m1,nexthop,pr1,bdd);//Create one Rule
-		
-		Rule ip2 = new Rule(port2, m2, hit0, nexthop, pr2,bdd);//next Rule ip2
-		Rule ip3 = new Rule(port3,m3,hit0,nexthop,pr3,bdd);
-		Rule ip4 = new Rule(port4,m4,hit0,nexthop,pr4,bdd);
-		ArrayList<Rule> rules = new ArrayList<>(); //Rule set
-		Set<Change> changes = new HashSet<>();//some change (predicate,from,to)
-		Identify(ip1,rules,bdd,changes);//insert one rule,identify changes
-		Identify(ip2,rules,bdd,changes);
-		Identify(ip4,rules,bdd,changes);
-		Identify(ip3,rules,bdd,changes);
-		for(int i=0;i<rules.size();i++)
-		{
-			rules.get(i).printer();//print rule set
-		}
-		for(Change change:changes)
-		{
-			change.printChange();
-		}
-		try {
-			Set<Integer> D = Update(changes, bdd, pre, por);
-			System.out.println("D="+D);
-			for(Integer d:D)
-				bdd.printSet(d);
-			mapPrint(por);
-			mapPrint(pre);
-			for(Node d:device)
-				System.out.println(d.str);
-			Graph G = ConstructDeltaForwardingGraph(D, por, device);
-			Set<Node> V = new HashSet<>();
-			V.addAll(device);
-			Node s1 = V.toArray(new Node[device.size()])[0];
-			V.clear();
-			V.add(s1);
-			G.printGraph();//print the graph
-			CheckInvariants(G, D,V);
-		} catch (ConcurrentModificationException e) {
-			// TODO: handle exception
-			System.out.println("dadda");
-		}finally {
-			
-		}
-		
-		
-		bdd.cleanup();
-	}	
+
 	public static <E,T> void mapPrint(Map<E, Set<T>> map) {
 		for(Entry<E, Set<T>> entry:map.entrySet())
 		{
@@ -208,10 +176,8 @@ public class IPpresentation {
 	public static void  Identify(Rule r,ArrayList<Rule> R,BDD bdd,ArrayList<Change> C) {
 		r.changeHit(r.getMatch());// r.hit <-- r.match;
 		int and = bdd.ref(bdd.minterm(""));
-//		int hit = bdd.ref(bdd.minterm(r.getMatch()));
 		for(int i=0;i<R.size();i++)
 		{
-//			int temphit = bdd.ref(bdd.minterm(R.rules[i].getMatch()));
 			and = bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));//r'.hit(and)r.hit
 			if(R.get(i).getPrior()>r.getPrior()&&and!=0)
 			{
@@ -258,7 +224,7 @@ public class IPpresentation {
 		}		
 	}
 	public static void Transfer(int p,String from ,String to,Map<String, Set<Integer>> pre,Map<Integer, Set<String>> por,Set<Integer> D)
-	{//118 2 3
+	{
 		pre.get(from).remove(p);
 		pre.get(to).add(p);
 		por.get(p).add(to);
@@ -312,14 +278,47 @@ public class IPpresentation {
 					c.insertion=bdd.and(c.insertion, bdd.not(p));
 				}
 			}
-//			mapPrint(por);//test por and pre
-//			System.out.println();
+			mapPrint(pre);//test por or pre
+			System.out.println();
 		}
 		} catch (ConcurrentModificationException e) {
 			// TODO: handle exception
 			System.out.println("catch ConcurrentModificationException!");
 		}
 		return D;
+	}
+	public static void Update(ArrayList<Change> C,BDD bdd,Map<String, Set<Integer>> pre,Map<Integer, Set<String>> por,Set<Integer> D) {
+		try {
+		for(Change c:C)
+		{
+			for(Integer p:pre.get(c.from))
+			{
+				int and=bdd.ref(bdd.and(p,c.insertion));
+				if(and!=0)
+				{
+					if(and!=p)
+					{
+							Split(p, and, bdd.and(p, bdd.not(c.insertion)), pre, por, D);
+					}
+					
+					Transfer(and, c.from, c.to, pre, por, D);
+					for(Integer pp:pre.get(c.from))
+					{
+						if(pp!=p&&por.get(pp).equals(por.get(p)))
+						{
+								Merge(p, pp, bdd.or(p, pp), pre, por, D);
+						}
+					}
+					c.insertion=bdd.and(c.insertion, bdd.not(p));
+				}
+			}
+			mapPrint(pre);//test por or pre
+			System.out.println();
+		}
+		} catch (ConcurrentModificationException e) {
+			// TODO: handle exception
+			System.out.println("catch ConcurrentModificationException!");
+		}
 	}
 	public static int T(int p) { //undefined
 		return p;
@@ -380,7 +379,7 @@ public class IPpresentation {
 	{
 		Set<Node> V = new HashSet<>();
 		Set<Edge> E = new HashSet<>(); 
-		Map<Edge, Set<Integer>> A = new HashMap<>();//A闇�瑕佸垵濮嬪寲鑾峰彇鍚勮竟淇℃伅
+		Map<Edge, Set<Integer>> A = new HashMap<>();
 		for(Integer delta:D)
 		{
 			for(String port:por.get(delta))
@@ -423,7 +422,53 @@ public class IPpresentation {
 		}
 		return new Graph(V,E,A);
 	}
-	public static void CheckInvariants(Graph G,Set<Integer> D,Set<Node> V,BDD bdd)//妫�鏌ヤ笉鍙橀噺
+	public static void ConstructDeltaForwardingGraph(Set<Integer> D,Map<Integer, Set<String>> por,Set<Node> device,Graph G)
+	{
+		Set<Node> V = G.V;
+		Set<Edge> E = G.E;
+		Map<Edge, Set<Integer>> A = G.A;
+		for(Integer delta:D)
+		{
+			for(String port:por.get(delta))
+			{
+				for(Node s1:device)
+				{
+					if(s1.findPort(port))
+					{
+						if(!V.contains(s1))
+						{
+							V.add(s1);
+						}
+						for(Node s2:device)
+						{
+							if(s2.findConnect(port))
+							{
+								if(!V.contains(s2))
+								{
+									V.add(s2);
+								}
+								Edge e1 =new Edge(s1, s2,port);
+//								Edge e2 = new Edge(s2,s1);
+								if(!E.contains(e1))
+								{
+									if(A.get(e1) != null) {
+										A.get(e1).clear();
+									}
+									else {
+										A.put(e1, new HashSet<>());
+										A.get(e1).clear();
+									}
+									E.add(e1);
+								}
+								A.get(e1).add(delta);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	public static void CheckInvariants(Graph G,Set<Integer> D,Set<Node> V,BDD bdd)
 	{
 		for(Node s:V)
 		{
@@ -431,7 +476,11 @@ public class IPpresentation {
 			pset.addAll(D);
 			Set<Node> history = new HashSet<>();
 			history.clear();
+			traversed = false;//判断未初始化的参与遍历的节点s
 			Traverse(s,pset,history,G,bdd);
+			if(traversed==false)
+				System.err.println("found blackhole by uninitialized node!");
+			System.out.println();
 		}
 	}
 	public static void Traverse(Node s,Set<Integer> pSet,Set<Node> history,Graph G,BDD bdd)
@@ -440,32 +489,52 @@ public class IPpresentation {
 			return;
 		if(history.contains(s))
 		{
-			System.out.println("found loop!");
+			System.err.println("found loop!");
 			return;
 		}
 		//
 		for (Edge e : G.E) {
 			if(s.findPort(e.fport))//e.from.comtains(s)
 			{
-				
+				traversed  = true;
 				for(Integer p:e.to.Pred.get("default"))//判断节点default端口上的谓词是否包含了这条边的谓词，如果是则出现黑洞
 				{
 					for(Integer pp:G.A.get(e))
 					{
 						if(bdd.and(p, pp)!=0)//
 						{
-							System.out.println("found blackhole!");
-							return;
+							System.err.println("found blackhole!");
+//							return;
 						}
 					}
 				}
-				Set<Integer> insert = new HashSet<>();
-				insert.clear();
-				insert.addAll(pSet);
-				insert.retainAll(G.A.get(e));
+				Set<Integer> insert = setAnd(pSet, G.A.get(e), bdd);
 				history.add(s);
 				Traverse(e.to, insert, history,G,bdd);
+				for(Integer i:insert)
+					bdd.deref(i);
 			}
 		}
 	}
+	/*
+	 * compute A(and)B by using BDD
+	 */
+	public static Set<Integer> setAnd(Set<Integer> A,Set<Integer> B,BDD bdd) {
+		Set<Integer> set = new HashSet<>();
+		for(Integer a:A)
+		{
+			for(Integer b:B)
+			{
+				int temp = bdd.ref(bdd.and(a, b));
+				if(temp!=0)
+				{
+					set.add(temp);
+					continue;
+				}
+				bdd.deref(temp);
+			}
+		}
+		return set;
+	}
 }
+

@@ -14,18 +14,19 @@ public class Node {
 	public ArrayList<Rule> rules;
 	private static int idcounter=0;
 	private final int portcount=7;
-	public String str;
+	public String name;
 	public Node()
 	{
 		this.id = ++idcounter;
 		this.port_list = new HashSet<>();
-		port_list.add("default");
 		this.connect = new HashSet<>();
-		this.str = "on";
+		this.name = "on";
+		port_list.add("default");
 	}
 	public Node(String name,Set<String> p,Set<String> c,BDD bdd)
 	{
 		this.id = ++idcounter;
+		this.name = name;
 		this.port_list = new HashSet<>();
 		this.connect = new HashSet<>();
 		this.Port = new HashMap<>();
@@ -42,7 +43,6 @@ public class Node {
 			Pred.put(pp, new HashSet<>());
 		}
 		rules.add(new Rule("default","","",3,0,bdd));
-		this.str = name;
 	}
 	public int getId() {
 		return id;
