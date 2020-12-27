@@ -12,7 +12,7 @@ import sun.jvm.hotspot.ui.action.FindAction;
 
 public class IPpresentation {
 	private static boolean traversed = false;
-	public static void main(String[] args) throws ConcurrentModificationException {
+	public static void main(String[] args) {
 		/*
 		 * 由于没有构建元素模块，本次实验仅针转发规则。
 		 * 待插入规则有四条，对应IP范围为（IP/mask)192.0.0.0/8,192.168.0.0/16,198.29.128.160/28,198.39.128/18
@@ -30,11 +30,23 @@ public class IPpresentation {
 		 * 算法5对应CheckInvariants(),根据算法4返回的转发图G以及初始启动节点集V，遍历转发图，验证不变量，判断环路黑洞。
 		 * 算法12通过自造数据进行了验证，目前没有问题，除了代码中的不好的操作导致捕获到ConcurrentModificationException异常，暂时影响不大，尚未修改。
 		 * 算法45问题解决，现在运行test()可以正确发现环路黑洞。
+		 * 将主类中的函数集成了APKeep类
 		 */
 		// TODO Auto-generated method stub
 		
-		test();
-		
+//		test();
+		String f1 = "C:\\Users\\puyun\\Desktop\\test\\workspace\\IPpresentation\\src\\rules.txt";
+		String f2 = "C:\\Users\\puyun\\Desktop\\test\\workspace\\IPpresentation\\src\\topo.txt";
+		long strattime = System.currentTimeMillis();
+		APKeep ap = new APKeep(f2,f1);
+		ap.insertRulestoDevice(Find("s3", ap.device));
+		ap.insertRulestoDevice(Find("s4", ap.device));
+		Set<Node> v = new HashSet<>();
+		v.add(Find("s3", ap.device));
+		ap.getStartNodes(v);
+		ap.CheckInvariants();
+		long endtime = System.currentTimeMillis();
+		System.out.println("runtime:"+(endtime-strattime)+"ns");
 	}
 	public static void test()//
 	{
@@ -50,6 +62,7 @@ public class IPpresentation {
 		long strattime = System.currentTimeMillis();
 		
 		insertRulestoDevice(Find("s3", device), rules, bdd, C, device, G, D);//insert rule to node s3
+		
 		
 		insertRulestoDevice(Find("s4", device), rules, bdd, C, device, G, D);//insert rule to node s4
 		
@@ -197,7 +210,7 @@ public class IPpresentation {
 		}
 		bdd.deref(and);
 		R.add(r);
-		System.out.println("-------->insert one rule!<--------");
+		System.out.println("-------->insert one rule!<---------");
 	}
 	public static void Split(int p,int p1,int p2,Map<String, Set<Integer>> pre,Map<Integer, Set<String>> por,Set<Integer> D)
 	{

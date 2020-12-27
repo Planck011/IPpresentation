@@ -16,8 +16,8 @@ public class Change {
 		bdd.deref(temp);
 	}
 	public void printChange() {
+		System.out.println("from:"+from+"  to:"+to);
 		System.out.print("bdd:");
 		bdd.printSet(insertion);
-		System.out.println("from:"+from+"  to:"+to);
 	}
 }

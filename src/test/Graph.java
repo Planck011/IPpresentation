@@ -23,7 +23,7 @@ public class Graph {
 		System.out.print("\nedge:");
 		for(Entry<Edge, Set<Integer>> entry:A.entrySet())
 		{
-			System.out.print("("+entry.getKey().from.name+","+entry.getKey().to.name+","+entry.getKey().fport+")"+"{"+entry.getValue()+"}");
+			System.out.print("("+entry.getKey().from.name+","+entry.getKey().to.name+","+entry.getKey().fport+")"+"{"+entry.getValue()+"} ");
 		}
 		System.out.println();
 	}

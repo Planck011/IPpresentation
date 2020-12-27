@@ -14,6 +14,9 @@ public class Node {
 	public ArrayList<Rule> rules;
 	private static int idcounter=0;
 	private final int portcount=7;
+	private String model;
+	private Int_Type Int_type;
+	private Layer layer;
 	public String name;
 	public Node()
 	{
@@ -22,6 +25,7 @@ public class Node {
 		this.connect = new HashSet<>();
 		this.name = "on";
 		port_list.add("default");
+		
 	}
 	public Node(String name,Set<String> p,Set<String> c,BDD bdd)
 	{
@@ -56,5 +60,14 @@ public class Node {
 		if(connect.contains(port))
 			return true;
 		return false;
+	}
+	public String getType() {
+		return this.Int_type.toString();
+	}
+	public String getLayer() {
+		return this.layer.toString();
+	}
+	public String getModel() {
+		return this.model;
 	}
 }

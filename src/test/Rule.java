@@ -9,7 +9,7 @@ public class Rule {
 	private String match; //匹配域名
 	private String hit ;//击中域
 	private int nexthop;//��һ��
-	private int prior;//���ȼ�
+	private int prior;//优先级
 	public BDD bdd;
 	public int b_match;
 	public int b_hit;
