@@ -8,7 +8,7 @@ public class Rule {
 	private String port;//端口
 	private String match; //匹配域名
 	private String hit ;//击中域
-	private int nexthop;//��һ��
+	private int nexthop;//未启动
 	private int prior;//优先级
 	public BDD bdd;
 	public int b_match;

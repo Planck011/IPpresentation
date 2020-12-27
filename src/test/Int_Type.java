@@ -6,3 +6,6 @@ public enum Int_Type {
 enum Layer{
 	access,core;
 }
+enum Rule_Type{
+	Faward,ACL,NAT;
+}

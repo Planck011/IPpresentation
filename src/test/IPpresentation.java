@@ -35,6 +35,11 @@ public class IPpresentation {
 		// TODO Auto-generated method stub
 		
 //		test();
+//		test2();
+		ACLelement acl = new ACLelement();
+		System.out.println(acl.getName());
+	}
+	public static void  test2() {
 		String f1 = "C:\\Users\\puyun\\Desktop\\test\\workspace\\IPpresentation\\src\\rules.txt";
 		String f2 = "C:\\Users\\puyun\\Desktop\\test\\workspace\\IPpresentation\\src\\topo.txt";
 		long strattime = System.currentTimeMillis();
@@ -507,7 +512,7 @@ public class IPpresentation {
 		}
 		//
 		for (Edge e : G.E) {
-			if(s.findPort(e.fport))//e.from.comtains(s)
+			if(s.findPort(e.fport)&&s.equals(e.from))//e.from.comtains(s)
 			{
 				traversed  = true;
 				for(Integer p:e.to.Pred.get("default"))//判断节点default端口上的谓词是否包含了这条边的谓词，如果是则出现黑洞

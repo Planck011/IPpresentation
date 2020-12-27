@@ -14,7 +14,11 @@ import jdd.bdd.BDD;
 
 /**
  * @author Planck
- *
+ * @version 0.0.1
+ * @see Node
+ * @see Change
+ * @see Graph
+ * @see Rule
  */
 public class APKeep {
 	public BDD bdd;
@@ -358,7 +362,7 @@ public class APKeep {
 		}
 		//
 		for (Edge e : G.E) {
-			if(s.findPort(e.fport))//e.from.comtains(s)
+			if(s.findPort(e.fport)&&s.equals(e.from))//e.from.comtains(s)
 			{
 				traversed  = true;
 				for(Integer p:e.to.Pred.get("default"))//判断节点default端口上的谓词是否包含了这条边的谓词，如果是则出现黑洞
