@@ -12,6 +12,7 @@ public class Node {
 	public Map<String, Set<Integer>> Pred;//port->predicate
 	public Map<Integer, Set<String>> Port;//predicate->port
 	public ArrayList<Rule> rules;
+	public ArrayList<Element> elements;
 	private static int idcounter=0;
 	private final int portcount=7;
 	private String model;
@@ -47,6 +48,9 @@ public class Node {
 			Pred.put(pp, new HashSet<>());
 		}
 		rules.add(new Rule("default","","",3,0,bdd));
+	}
+	public void creatElement() {
+		
 	}
 	public int getId() {
 		return id;

@@ -35,9 +35,9 @@ public class IPpresentation {
 		// TODO Auto-generated method stub
 		
 //		test();
-//		test2();
-		ACLelement acl = new ACLelement();
-		System.out.println(acl.getName());
+		test2();
+//		ACLelement acl = new ACLelement();
+//		System.out.println(acl.getName());
 	}
 	public static void  test2() {
 		String f1 = "C:\\Users\\puyun\\Desktop\\test\\workspace\\IPpresentation\\src\\rules.txt";
