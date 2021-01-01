@@ -144,10 +144,10 @@ public class APKeep {
 				Identify(r, s.rules);
 			}
 		}
-//		for(Change c:C)
-//			c.printChange();
+		for(Change c:C)
+			c.printChange();
 		Set<Integer> d1 = Update(s.Pred, s.Port);
-//		System.out.println("D="+d1);
+		System.out.println("D="+d1);
 		ConstructDeltaForwardingGraph(d1,s.Port);
 		G.printGraph();
 		C.clear();
@@ -157,26 +157,37 @@ public class APKeep {
 	 * @param r  插入的一条规则
 	 * @param R  当前设备的已有规则链表
 	 */
-	public  void  Identify(Rule r,ArrayList<Rule> R) {
+	public  void  Identify(Rule r,Set<Rule> R) {
+		for(Rule rr:R)
+		{
+			if(rr.equals(r))
+				return;
+		}
 		r.changeHit(r.getMatch());// r.hit <-- r.match;
 		int and = bdd.ref(bdd.minterm(""));
-		for(int i=0;i<R.size();i++)
-		{
-			and = bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));//r'.hit(and)r.hit
-			if(R.get(i).getPrior()>r.getPrior()&&and!=0)
+		for (Rule rule : R) {
+			and = bdd.ref(bdd.and(r.b_hit, rule.b_hit));
+			if(rule.getPrior()>r.getPrior()&&and!=0)
 			{
-				r.b_hit=bdd.ref(bdd.and(r.b_hit, R.get(i).b_hit));
+				r.b_hit = bdd.ref(bdd.and(r.b_hit, rule.b_hit));
 			}
-			if(R.get(i).getPrior()<r.getPrior()&&and!=0) {
-				if(r.getport()!=R.get(i).getport())
+			if(rule.getPrior()<r.getPrior()&&and!=0)
+			{
+				if(r.getport()!=rule.getport())
 				{
-					Change change = new Change(and, R.get(i).getport(),r.getport(), bdd);//
+					Change change = new Change(and, rule.getport(),r.getport(), bdd);//
 //					change.printChange();
-					C.add(change);//add to changes
+					boolean flag = false;
+					for(Change c:C)
+					{
+						if(c.from.equals(change.from)&&c.to.equals(change.to)&&c.insertion==change.insertion)
+							flag = true;
+					}
+					if(flag == false)
+						C.add(change);//add to changes
 					System.out.println("-------->identify success!<--------");
 				}
-				R.get(i).b_hit=bdd.ref(bdd.and(bdd.not(r.b_hit), R.get(i).b_hit));//
-//				R.rules[i].changeHit(and);
+				rule.b_hit = bdd.ref(bdd.and(bdd.not(r.b_hit), rule.b_hit));
 			}
 		}
 		bdd.deref(and);
@@ -247,29 +258,30 @@ public class APKeep {
 		try {
 		for(Change c:C)
 		{
-			for(Integer p:pre.get(c.from))
+			for(int i=0;i<pre.get(c.from).size();i++)
 			{
-				int and=bdd.ref(bdd.and(p,c.insertion));
+				Integer[] P = pre.get(c.from).toArray(new Integer[pre.get(c.from).size()]);
+				int and=bdd.ref(bdd.and(P[i],c.insertion));
 				if(and!=0)
 				{
-					if(and!=p)
+					if(and!=P[i])
 					{
-							Split(p, and, bdd.and(p, bdd.not(c.insertion)), pre, por, d);
+							Split(P[i], and, bdd.and(P[i], bdd.not(c.insertion)), pre, por, d);
 					}
 					
 					Transfer(and, c.from, c.to, pre, por, d);
 					for(Integer pp:pre.get(c.from))
 					{
-						if(pp!=p&&por.get(pp).equals(por.get(p)))
+						if(pp!=P[i]&&por.get(pp).equals(por.get(P[i])))
 						{
-								Merge(p, pp, bdd.or(p, pp), pre, por, d);
+								Merge(P[i], pp, bdd.or(P[i], pp), pre, por, d);
 						}
 					}
-					c.insertion=bdd.and(c.insertion, bdd.not(p));
+					c.insertion=bdd.and(c.insertion, bdd.not(P[i]));
 				}
 			}
-//			mapPrint(pre);//test por or pre
-//			System.out.println();
+			mapPrint(pre);//test por or pre
+			System.out.println();
 		}
 		} catch (ConcurrentModificationException e) {
 			// TODO: handle exception

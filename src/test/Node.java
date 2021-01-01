@@ -11,7 +11,7 @@ public class Node {
 	public Set<String> connect;
 	public Map<String, Set<Integer>> Pred;//port->predicate
 	public Map<Integer, Set<String>> Port;//predicate->port
-	public ArrayList<Rule> rules;
+	public Set<Rule> rules;
 	public ArrayList<Element> elements;
 	private static int idcounter=0;
 	private final int portcount=7;
@@ -36,7 +36,7 @@ public class Node {
 		this.connect = new HashSet<>();
 		this.Port = new HashMap<>();
 		this.Pred = new HashMap<>();
-		this.rules = new ArrayList<>();
+		this.rules = new HashSet<>();
 		port_list.addAll(p);
 		connect.addAll(c);
 		Pred.put("default", new HashSet<Integer>());
@@ -75,7 +75,7 @@ public class Node {
 		return this.model;
 	}
 }
-class Node<A> {
+class Node_1<A> {
 	private int id;
 	public Set<A> port_list;
 	public Set<A> connect;
@@ -90,7 +90,7 @@ class Node<A> {
 	private Layer layer;
 	public A name;
 	@SuppressWarnings("unchecked")
-	public Node()
+	public Node_1()
 	{
 		this.id = ++idcounter;
 		this.port_list = new HashSet<>();
@@ -99,7 +99,7 @@ class Node<A> {
 		port_list.add((A) "default");
 		
 	}
-	public Node(A name)
+	public Node_1(A name)
 	{
 		this.id = ++idcounter;
 		this.port_list = new HashSet<>();
@@ -108,7 +108,7 @@ class Node<A> {
 		
 	}
 	@SuppressWarnings("unchecked")
-	public Node(A name,Set<A> p,Set<A> c,BDD bdd)
+	public Node_1(A name,Set<A> p,Set<A> c,BDD bdd)
 	{
 		this.id = ++idcounter;
 		this.name = name;
