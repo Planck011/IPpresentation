@@ -5,6 +5,7 @@ import jdd.bdd.BDD;
 public class Rule {
 	private static int idcounter=0;
 	private int id;//编号
+	private String location;
 	private String port;//端口
 	private String match; //匹配域名
 	private String hit ;//击中域
@@ -14,6 +15,19 @@ public class Rule {
 	public int b_match;
 	public int b_hit;
 //	private int lport;
+	public Rule(String loc,String p,String m,String h,int n,int pr,BDD bdd) {
+		this.id=++idcounter;
+		this.location = loc;
+		this.port=p;
+		this.match=m;
+		this.hit=h;
+		this.nexthop=n;
+		this.prior=pr;
+		this.bdd=bdd;
+		this.b_hit=bdd.ref(bdd.minterm(hit));
+		this.b_match=bdd.ref(bdd.minterm(match));
+		
+	}
 	public Rule(String p,String m,String h,int n,int pr,BDD bdd) {
 		this.id=++idcounter;
 		this.port=p;
@@ -40,6 +54,9 @@ public class Rule {
 	}
 	public int getId() {
 		return id;
+	}
+	public String getLoc() {
+		return location;
 	}
 	public String getport(){
 		return port;

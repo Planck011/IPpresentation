@@ -1,0 +1,4 @@
+$s3 
+vlan2 vlan3 vlan4 vlan5;3 vlan2,4 vlan3,5 vlan4,6 vlan5
+$s4
+vlan2;7 vlan2

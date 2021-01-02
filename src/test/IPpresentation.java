@@ -3,12 +3,12 @@ package test;
 import java.util.*;
 import java.util.Map.Entry;
 
-import com.sun.tools.javac.launcher.Main;
 
 import java.io.*;
 import java.lang.*;
 import jdd.bdd.*;
-import sun.jvm.hotspot.ui.action.FindAction;
+import parser.DeviceList;
+import parser.*;
 
 public class IPpresentation {
 	private static boolean traversed = false;
@@ -35,9 +35,21 @@ public class IPpresentation {
 		// TODO Auto-generated method stub
 		
 //		test();
-		test2();
+//		test2();
 //		ACLelement acl = new ACLelement();
 //		System.out.println(acl.getName());
+		String ssString = "00001010000000000000000000000001";
+		int mask = 5;
+		String s = ssString.substring(0, mask);
+		System.out.println(s);
+	}
+	public static void  test3() {
+		String f1 = "C:\\Users\\puyun\\Desktop\\test\\workspace\\IPpresentation\\src\\rules.txt";
+		String f2 = "C:\\Users\\puyun\\Desktop\\test\\workspace\\IPpresentation\\src\\topo.txt";
+		String f3 = "C:\\Users\\puyun\\Desktop\\test\\workspace\\IPpresentation\\src\\device.txt";
+		APKeep ap = new APKeep(f2, f1,f3);
+		ap.insertRulestoDevice(Find("s3", ap.device));
+		ap.insertRulestoDevice(Find("s4", ap.device));
 	}
 	public static void  test2() {
 		String f1 = "C:\\Users\\puyun\\Desktop\\test\\workspace\\IPpresentation\\src\\rules.txt";

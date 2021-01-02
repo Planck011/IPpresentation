@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +30,17 @@ public class APKeep {
 	public Set<Integer> D ; //transffered predicate set
 	public Set<Node> V ;
 	private static boolean traversed = false;
+	
+	public APKeep() {
+		this.bdd=new BDD(1000,100);
+		bdd.createVars(32);
+		this.device = new HashSet<>();
+		this.rules = new ArrayList<>();
+		this.C = new ArrayList<>();
+		this.G = new Graph();
+		this.D = new HashSet<>();
+		this.V = null;
+	}
 	/**
 	 * @param device 设备拓扑信息文件路径
 	 * @param rule 待插入规则信息文件路径
@@ -44,7 +56,18 @@ public class APKeep {
 		this.D = new HashSet<>();
 		this.V = null;
 	}
-	
+	public APKeep(String device,String rule,String dd) {
+		// TODO Auto-generated constructor stub
+		this.bdd=new BDD(1000,100);
+		bdd.createVars(32);
+		this.device = initDevice(device);
+		this.rules = initRule(rule);
+		setDevice(dd);
+		this.C = new ArrayList<>();
+		this.G = new Graph();
+		this.D = new HashSet<>();
+		this.V = null;
+	}
 	/**
 	 * @param set 进行遍历验证不变量的初始节点集
 	 */
@@ -65,14 +88,15 @@ public class APKeep {
 			BufferedReader in = new BufferedReader((new FileReader(f)));
 			String str;
 			String hit="00000000000000000000000000000000";
-			while((str=in.readLine())!=null)
+			while((str=in.readLine())!=null&&str!="")
 			{
 				String[] rule = str.split("\\,");
-				String port=rule[0];
-				String match=rule[1];
-				int next=Integer.parseInt(rule[2]);
-				int prir=Integer.parseInt(rule[3]);
-				Rule r = new Rule(port,match,hit,next,prir,bdd);
+				String loc = rule[0];
+				String port=rule[1];
+				String match=rule[2];
+				int next=Integer.parseInt(rule[3]);
+				int prir=Integer.parseInt(rule[4]);
+				Rule r = new Rule(loc,port,match,hit,next,prir,bdd);
 				rules.add(r);
 				
 			}
@@ -83,7 +107,7 @@ public class APKeep {
 		}
 		return rules;
 	}
-	public  Set<Node> initDevice(String f)
+ 	public  Set<Node> initDevice(String f)
 	{
 		Set<Node> device = new HashSet<>();
 		try {
@@ -121,6 +145,51 @@ public class APKeep {
 		}
 		return device;
 	}
+	public void setDevice(String f)
+	{
+		try {
+			BufferedReader in = new BufferedReader(new FileReader(f));
+			String str;
+			String sname = new String();
+			while((str=in.readLine())!=null)
+			{
+				if(str.startsWith("$"))
+				{
+					sname = str.substring(1, str.length()-1);
+					continue;
+				}
+				Node s = Find(sname, device);
+				String[] tokens = str.split("\\;");
+				String[] vlans = tokens[0].split(" ");
+				Set<String> port_list = new HashSet<>();
+				for(String p:vlans)
+				{
+					port_list.add(p);
+				}
+				Map<String, Set<String>> map = new HashMap<>();
+				String[] maps = tokens[1].split("\\,");
+				for(String m:maps) {
+					String[] kv = m.split(" ");
+					map.put(kv[0], new HashSet<>());
+					for(int i=1;i<kv.length;i++)
+					{
+						map.get(kv[0]).add(kv[i]);
+					}
+				}
+				s.portMap = map;
+				s.creatFWElement(s.name,port_list);					
+			}
+//			for(Node d:device)
+//			{
+//				System.out.println(d.str);
+//			}
+			in.close();
+			
+		} catch (IOException  e) {
+			// TODO: handle exception
+			System.err.println("no such topo file,please check");
+		}
+	}
 	public static  <E,T> void mapPrint(Map<E, Set<T>> map) {
 		for(Entry<E, Set<T>> entry:map.entrySet())
 		{
@@ -136,10 +205,13 @@ public class APKeep {
 		}	
 		return null;
 	}
+	public void buildPPM(Node s) {
+		
+	}
 	public  void insertRulestoDevice(Node s) {
 		for(Rule r:rules)
 		{
-			if(s.findPort(r.getport()))
+			if(s.name.equals(r.getLoc()))
 			{
 				Identify(r, s.rules);
 			}
@@ -147,8 +219,11 @@ public class APKeep {
 		for(Change c:C)
 			c.printChange();
 		Set<Integer> d1 = Update(s.Pred, s.Port);
+		s.updateInterfaces();
+		mapPrint(s.Pred_interface);
+		mapPrint(s.Port_interface);
 		System.out.println("D="+d1);
-		ConstructDeltaForwardingGraph(d1,s.Port);
+		ConstructDeltaForwardingGraph(d1,s.Port_interface);
 		G.printGraph();
 		C.clear();
 		D.addAll(d1);
@@ -158,11 +233,7 @@ public class APKeep {
 	 * @param R  当前设备的已有规则链表
 	 */
 	public  void  Identify(Rule r,Set<Rule> R) {
-		for(Rule rr:R)
-		{
-			if(rr.equals(r))
-				return;
-		}
+		
 		r.changeHit(r.getMatch());// r.hit <-- r.match;
 		int and = bdd.ref(bdd.minterm(""));
 		for (Rule rule : R) {
@@ -281,6 +352,7 @@ public class APKeep {
 				}
 			}
 			mapPrint(pre);//test por or pre
+			mapPrint(por);
 			System.out.println();
 		}
 		} catch (ConcurrentModificationException e) {
@@ -305,7 +377,7 @@ public class APKeep {
 			{
 				for(Node s1:device)
 				{
-					if(s1.findPort(port))
+					if(s1.findInterface(port))
 					{
 						if(!V.contains(s1))
 						{
@@ -374,7 +446,7 @@ public class APKeep {
 		}
 		//
 		for (Edge e : G.E) {
-			if(s.findPort(e.fport)&&s.equals(e.from))//e.from.comtains(s)
+			if(s.findInterface(e.fport)&&s.equals(e.from))//e.from.comtains(s)
 			{
 				traversed  = true;
 				for(Integer p:e.to.Pred.get("default"))//判断节点default端口上的谓词是否包含了这条边的谓词，如果是则出现黑洞
